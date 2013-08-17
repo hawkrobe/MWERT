@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Drag Anything Bookmarklet</title>
+  </head>
+  <body>
+  <script>
+  void function(){
+    var load = function(){
+      function Script(src){
+        if (!(this instanceof Script))
+          return new Script(src);
+        this.src = src;
+      }
+
+      Script.prototype = {
+        constructor: Script,
+        load: function load(callback){
+          function done(status, e){
+            this.state = status;
+            this.loadTime = Date.now() - time;
+            document.body.removeChild(script);
+            callback.call(this, status, e);
+          }
+          var time = Date.now();
+          var script = document.createElement('script');
+          script.src = this.src;
+          script.onload = done.bind(this, 'load');
+          script.onerror = done.bind(this, 'error');
+          document.body.appendChild(script);
+          this.state = 'loading';
+          return this;
+        }
+      };
+      return function load(scripts, callback){
+        var count = 0, loaded = function(){ --count || callback(); };
+        scripts = (Array.isArray(scripts) ? scripts : [scripts]).map(Script);
+        scripts.forEach(function(script, index){
+          count++;
+          script.index = index;
+          script.load(loaded);
+        });
+      };
+    }
+
+    function bookmarklet(name, scripts, fn){
+      scripts = '['+scripts.map(function(src){ return '"'+src+'"' }).join(',')+']';
+      var a = document.body.appendChild(document.createElement('a'));
+      a.textContent = name;
+      a.href = ('javascript:('+load+'()('+scripts+','+fn+'))')
+        .replace(/^\s*\/\/.+\n/g, '')
+        .replace(/\t/g, ' ')
+        .replace(/ +/g, ' ')
+        .replace(/(?:^\s+)|(?:\s+$)/g, '')
+        .replace(/\n/g, '');
+    }
+
+    bookmarklet('Move Anything', ['https://raw.github.com/Benvie/Mouse/master/Mouse.js'], function(){
+      var style, x, y, z;
+
+      mouse.on('down', function(e){
+        e.preventDefault();
+      });
+
+      mouse.on('grab', function(e){
+        var computed = getComputedStyle(e.target);
+        style = e.target.style;
+        x = (parseFloat(computed.left) || 0) - this.x;
+        y = (parseFloat(computed.top) || 0) - this.y;
+        z = style.zIndex;
+        style.zIndex = 10000;
+        if (computed.position === 'static')
+          style.position = 'relative';
+      });
+
+      mouse.on('drag', function(e){
+        style.left = (this.x + x) + 'px';
+        style.top = (this.y + y) + 'px';
+      });
+
+      mouse.on('drop', function(e){
+        style.zIndex = z;
+        style = null;
+        e.preventDefault();
+      });
+    });
+  }();
+  </script>
+  </body>
+</html>
