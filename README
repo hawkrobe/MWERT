@@ -1,1 +1,22 @@
-Hello World
+To launch the experiment, enter "node app.js" at the command line. 
+
+There are several steps that need to be taken first:
+
+1) Node.js needs to be installed on your web server. There are good installation instructions at https://gist.github.com/isaacs/579814, and many online tutorials to help get it running.
+
+2) Create a MySQL database containing a table "game_participant" with columns for "workerId" and "bonus_pay". Alternatively, you can grep for those terms and change them to fit your own pre-existing database. Plug that database name, username, and password into the database.js file. To prevent people from cheating, we don't let mechanical turk workers play unless their workerId is already in the database from accepting the HIT, so to test it, you'll have to add a few fake ids that you keep to yourself. 
+
+3) Change the path in app.js to point to this folder on your own system.
+
+If everything launches correctly, you'll see a message saying
+
+CONNECTING TO SQL.
+   info  - socket.io started
+         :: Express :: Listening on port 8000
+SQL CONNECT SUCCESSFUL.
+
+and can access the game by entering the following URL into a modern browser:
+
+<servername>:8000/<filepathto>/index.html?id=<fakeidfromdatabase>&condition=ballistic
+
+game.server.js contains the code for pairing participants up into unique games, and game.core.js contains the logic specific to my own game.
