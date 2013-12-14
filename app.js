@@ -91,14 +91,15 @@ sio.sockets.on('connection', function (client) {
     // Pull out the variables we need. Expecting two arguments in the query string
     var id = query.id;
     var condition = query.condition;
-    
+    console.log("id is" + id);
     // Replace game_participant with the name of the table where you're keeping participants
     var sql1 = 'SELECT EXISTS(SELECT * FROM game_participant WHERE workerId = "' + id + '") AS b';
     connection.query(sql1, function(err, results) {
-	// Only let a player join if they are already in the database.
-	// Otherwise, send an alert message
-	player_exists = results[0].b;
-	if (id && player_exists) {
+	    // Only let a player join if they are already in the database.
+	    // Otherwise, send an alert message
+	    console.log(results);
+	    player_exists = results[0].b;
+	    if (id && player_exists) {
 	    console.log('A player with workerid ' + id
 			+ ' connected!');
 	    client.userid = id;

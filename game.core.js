@@ -101,7 +101,7 @@ var game_core = function(game_instance){
     this.tick_frequency = 666;
 
     //Number of games left
-    this.games_remaining = 60;
+    this.games_remaining = 50;
 
     //Players will replay over and over, so we keep track of which number we're on,
     //to print out to data file
@@ -836,9 +836,9 @@ game_core.prototype.writeData = function() {
     if (this.players.other.angle < 0)
 	other_angle_to_write = parseInt(this.players.other.angle, 10)  + 360;
     if (this.condition == "ballistic") 
-	file_path = "data/ballistic/game_" + this.game_id + ".csv";
+	file_path = "data/high_conflict_ballistic/game_" + this.game_id + ".csv";
     else if (this.condition == "dynamic") 
-	file_path = "data/dynamic/game_" + this.game_id + ".csv";
+	file_path = "data/high_conflict_dynamic/game_" + this.game_id + ".csv";
     // Write data for the host player
     var host_data_line = String(this.game_number) + ',';
     host_data_line += String(this.game_clock) + ',';
@@ -900,12 +900,13 @@ game_core.prototype.server_reset_cities = function() {
 
     // Randomly reset payoffs
     var r = Math.floor(Math.random() * 2);
+
     if (r == 0) {
 	this.cities.top.payoff = 1;
-	this.cities.bottom.payoff = 2;
+	this.cities.bottom.payoff = 4;
 	this.best_city_string = 'bottom';
     } else {
-	this.cities.top.payoff = 2;
+	this.cities.top.payoff = 4;
 	this.cities.bottom.payoff = 1;
 	this.best_city_string = 'top';
     }
