@@ -125,22 +125,22 @@ var game_core = function(game_instance){
 	this.players.other.color = '#212121';
 	this.players.self.color = '#212121';
 	
-	local_this = this;
+	var local_this = this;
 	
 	//Assign click handler ONCE, with the associated data.
 	$('#viewport').click(function(e){
-		e.preventDefault();
-		// e.pageX is relative to whole page -- we want
-		// relative to GAME WORLD (i.e. viewport)
-		var offset = $(this).offset(); 
-		var relX = e.pageX - offset.left;
-		var relY = e.pageY - offset.top;
-
-		// The things we care about are not yet defined, so we
-		// just pass it off to another function
-		local_this.client_on_click(relX, relY);
-	    });
-
+	    e.preventDefault();
+	    // e.pageX is relative to whole page -- we want
+	    // relative to GAME WORLD (i.e. viewport)
+	    var offset = $(this).offset(); 
+	    var relX = e.pageX - offset.left;
+	    var relY = e.pageY - offset.top;
+	    
+	    // The things we care about are not yet defined, so we
+	    // just pass it off to another function
+	    local_this.client_on_click(relX, relY);
+	});
+	
     } 
 
 }; //game_core.constructor
