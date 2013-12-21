@@ -1170,7 +1170,7 @@ game_core.prototype.client_ondisconnect = function(data) {
 	URL += '?workerId=' + this.players.self.id;
 	window.location.replace(URL);
     }
-}; //client_ondisconnect
+}; 
 
 // Associates socket.io actions with particular functions in this class.
 game_core.prototype.client_connect_to_server = function() {

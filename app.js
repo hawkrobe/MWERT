@@ -46,11 +46,11 @@ console.log('\t :: Express :: Listening on port ' + gameport );
 
 app.get( '/*' , function( req, res, next ) {
 
-  //This is the current file they have requested
-        var file = req.params[0]; 
+    //This is the current file they have requested
+    var file = req.params[0]; 
 
 	//For debugging, we can track what files are requested.
-        if(verbose) console.log('\t :: Express :: file requested : ' + file);
+    if(verbose) console.log('\t :: Express :: file requested : ' + file);
 
 	//Send the requesting client the file.
 	// 
@@ -114,8 +114,8 @@ sio.sockets.on('connection', function (client) {
 	    //Now we want to handle some of the messages that clients will send.
 	    //They send messages here, and we send them to the game_server to handle.
 	    client.on('message', function(m) {
-		game_server.onMessage(client, m);
-	    }); //client.on message
+		    game_server.onMessage(client, m);
+	    }); 
 	    
 	    //Useful to know when someone connects
 	    console.log('\t socket.io:: player ' + client.userid + ' connected');
@@ -125,24 +125,24 @@ sio.sockets.on('connection', function (client) {
 	    //in, and make sure the other player knows that they left and so on.
 	    client.on('disconnect', function () {
 		
-		//Useful to know when soomeone disconnects
-		if (client.userid)
-		    console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game.id);
+		    //Useful to know when soomeone disconnects
+		    if (client.userid)
+		        console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game.id);
 		
-		//If the client was in a game, set by game_server.findGame,
-		//we can tell the game server to update that game state.
-			    if(client.userid && client.game && client.game.id) {
-		    
+		    //If the client was in a game, set by game_server.findGame,
+		    //we can tell the game server to update that game state.
+			if(client.userid && client.game && client.game.id) {
+		        
 				//player leaving a game should destroy that game
 				game_server.endGame(client.game.id, client.userid);
+		        
+			} //client.game_id
+			
+		}); //client.on disconnect
 		    
-			    } //client.game_id
-			    
-			}); //client.on disconnect
-		    
-		} else {
-		    client.userid = 'none';
-		    client.send('s.alert');
-		}
-	    });
-    }); //sio.sockets.on connection
+	} else {
+		client.userid = 'none';
+		client.send('s.alert');
+	}
+	});
+}); //sio.sockets.on connection

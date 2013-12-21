@@ -9,12 +9,12 @@
 */
 
     var
-        game_server = module.exports = { games : {}, game_count:0 },
-        UUID        = require('node-uuid'),
-	fs          = require('fs'),
-	database    = require(__dirname + "/database"),
- 	connection  = database.getConnection(),
-        verbose     = true;
+       game_server = module.exports = { games : {}, game_count:0 },
+       UUID        = require('node-uuid'),
+       fs          = require('fs'),
+       database    = require(__dirname + "/database"),
+       connection  = database.getConnection(),
+       verbose     = true;
 
 //Since we are sharing code with the browser, we
 //are going to include some values to handle that.
