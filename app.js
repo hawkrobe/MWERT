@@ -44,17 +44,16 @@ console.log('\t :: Express :: Listening on port ' + gameport );
 
 app.get( '/*' , function( req, res, next ) {
 
-  //This is the current file they have requested
-        var file = req.params[0]; 
+    //This is the current file they have requested
+    var file = req.params[0]; 
 
 	//For debugging, we can track what files are requested.
-        if(verbose) console.log('\t :: Express :: file requested : ' + file);
+    if(verbose) console.log('\t :: Express :: file requested : ' + file);
 
 	//Send the requesting client the file.
-	// 
-        res.sendfile("/Library/Server/Web/Data/Sites/Default/" + file );
-
-    }); //app.get *
+    path = "/Users/hawkrobe/Box Documents/Class Archives/COGS-Q270/Project/Q270Code_and_Data/collective_behavior/";
+    res.sendfile(path + file );
+}); //app.get *
 
 /* Socket.IO server set up. */
 
@@ -67,13 +66,13 @@ app.get( '/*' , function( req, res, next ) {
 //See http://socket.io/
 
 sio.configure(function (){
+    
+    sio.set('log level', 0);
 
-        sio.set('log level', 0);
-
-        sio.set('authorization', function (handshakeData, callback) {
+    sio.set('authorization', function (handshakeData, callback) {
 		callback(null, true); // error first callback style 
-	    });
-    });
+	});
+});
 
 game_server = require('./game.server.js');
 

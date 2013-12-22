@@ -71,7 +71,7 @@ var game_core = function(game_instance){
     };
     
     // Create targets and assign fixed position
-    this.cities = {
+    this.targets = {
 	top : new city({x : 360, y : 120}),
 	bottom : new city({x : 360, y : 360})
     };
@@ -117,29 +117,7 @@ var game_core = function(game_instance){
     this.physics_interval_id = this.create_physics_simulation();
     
     //Client specific initialisation
-    if(!this.server) {
-            
-
-	this.players.other.color = '#212121';
-	this.players.self.color = '#212121';
-	
-	var local_this = this;
-	
-	//Assign click handler ONCE, with the associated data.
-	$('#viewport').click(function(e){
-	    e.preventDefault();
-	    // e.pageX is relative to whole page -- we want
-	    // relative to GAME WORLD (i.e. viewport)
-	    var offset = $(this).offset(); 
-	    var relX = e.pageX - offset.left;
-	    var relY = e.pageY - offset.top;
-	    
-	    // The things we care about are not yet defined, so we
-	    // just pass it off to another function
-	    local_this.client_on_click(relX, relY);
-	});
-	
-    } 
+//    if(!this.server) {
 
 }; //game_core.constructor
 
@@ -205,7 +183,7 @@ var game_player = function( game_instance, player_instance ) {
     
     this.info_color = 'rgba(255,255,255,0)';
     this.id = '';
-    this.cities_enabled = false;
+    this.targets_enabled = false;
     this.destination = null;
     this.points_earned = 0;
     this.speed = 0;
@@ -354,23 +332,23 @@ game_player.prototype.draw = function(){
 
 }; //game_player.draw
 
-// this.cities_enabled is set to true when both people have joined.
+// this.targets_enabled is set to true when both people have joined.
 // Uses HTML5 canvas
 
-game_player.prototype.draw_cities = function() {
-    // Draw cities
-    if (this.cities_enabled) {
-	var centerX1 = this.game.cities.top.location.x;
-	var centerY1 = this.game.cities.top.location.y;
-	var centerX2 = this.game.cities.bottom.location.x;
-	var centerY2 = this.game.cities.bottom.location.y;
-	var radius = this.game.cities.top.radius;
-	var outer_radius = this.game.cities.top.outer_radius;
+game_player.prototype.draw_targets = function() {
+    // Draw targets
+    if (this.targets_enabled) {
+	var centerX1 = this.game.targets.top.location.x;
+	var centerY1 = this.game.targets.top.location.y;
+	var centerX2 = this.game.targets.bottom.location.x;
+	var centerY2 = this.game.targets.bottom.location.y;
+	var radius = this.game.targets.top.radius;
+	var outer_radius = this.game.targets.top.outer_radius;
 
 	// Filled in top city
 	game.ctx.beginPath();
 	game.ctx.arc(centerX1, centerY1, radius, 0, 2 * Math.PI, false);
-	game.ctx.fillStyle = this.game.cities.top.color;	
+	game.ctx.fillStyle = this.game.targets.top.color;	
 	game.ctx.fill();
 	game.ctx.lineWidth = 1;
 	game.ctx.strokeStyle = 'gray';
@@ -384,7 +362,7 @@ game_player.prototype.draw_cities = function() {
 	// Filled in bottom city
 	game.ctx.beginPath();
 	game.ctx.arc(centerX2, centerY2, radius, 0, 2 * Math.PI, false);
-	game.ctx.fillStyle = this.game.cities.bottom.color;
+	game.ctx.fillStyle = this.game.targets.bottom.color;
 	game.ctx.fill();
 	game.ctx.stroke();
 
@@ -393,14 +371,14 @@ game_player.prototype.draw_cities = function() {
 	game.ctx.arc(centerX2, centerY2, outer_radius, 0, 2 * Math.PI, false);
 	game.ctx.stroke();
 	
-	// Draw tag next to cities (for payoff info)
+	// Draw tag next to targets (for payoff info)
 	game.ctx.fillStyle = 'white';
 	game.ctx.font = "15pt Helvetica";
-	cities = this.game.cities;
-	game.ctx.fillText("$0.0" + cities.top.payoff, cities.top.location.x - 27, cities.top.location.y - 50 );
-	game.ctx.fillText("$0.0" + cities.bottom.payoff, cities.bottom.location.x - 27, cities.bottom.location.y + 65);
+	targets = this.game.targets;
+	game.ctx.fillText("$0.0" + targets.top.payoff, targets.top.location.x - 27, targets.top.location.y - 50 );
+	game.ctx.fillText("$0.0" + targets.bottom.payoff, targets.bottom.location.x - 27, targets.bottom.location.y + 65);
     }
-}; // draw_cities
+}; // draw_targets
 
 /*
 
@@ -467,14 +445,14 @@ game_core.prototype.update_physics = function() {
 */
 
 // This is called every 1000ms and simulates the world state. This is where we
-// update positions based on noise and angle and check whether cities
+// update positions based on noise and angle and check whether targets
 // have been reached.
 game_core.prototype.server_update_physics = function() {
 
     host_player = this.players.self;
     other_player = this.players.other;
-    top_city = this.cities.top;
-    bottom_city = this.cities.bottom;
+    top_city = this.targets.top;
+    bottom_city = this.targets.bottom;
 
     // If a player has reached their destination, stop Have to put
     // other wrapper because destination is null until player clicks
@@ -585,8 +563,8 @@ game_core.prototype.server_update_physics = function() {
 game_core.prototype.server_check_for_payoff = function(player1, player2, whoisplayer1){
 
     // Check whether players have reached 
-    var top_city = this.cities.top;
-    var bottom_city = this.cities.bottom;
+    var top_city = this.targets.top;
+    var bottom_city = this.targets.bottom;
     
     // If player1 reaches the top city before player2, reward them and
     // end the game
@@ -606,7 +584,7 @@ game_core.prototype.server_check_for_payoff = function(player1, player2, whoispl
 	    this.instance.player_host.send('s.m.    You earned ' + bottom_city.payoff + '\xA2');
 	    this.instance.player_client.send('s.m.    You earned ' + top_city.payoff + '\xA2');
 	}
-    // If it's a tie, no one wins and game over (i.e. set both cities to visited)
+    // If it's a tie, no one wins and game over (i.e. set both targets to visited)
     } else if(player1.distanceFrom(top_city.location) < top_city.radius + 8
 	      && !top_city.visited
 	      && player2.distanceFrom(top_city.location) < top_city.outer_radius + 8) {
@@ -646,13 +624,13 @@ game_core.prototype.server_check_for_payoff = function(player1, player2, whoispl
 	bottom_city.color = 'black';
     }
 
-    // If both cities have been marked as visited, we tell the server
+    // If both targets have been marked as visited, we tell the server
     // we're ready to start a new game. But we only do it once, thus the flag.
     if ((top_city.visited 
 	 && bottom_city.visited
 	 && !this.newgame_initiated_flag)) {
 
-	console.log("Both cities visited...");
+	console.log("Both targets visited...");
 	this.players.self.speed = 0;
 	this.players.other.speed = 0;
 	this.newgame_initiated_flag = true;
@@ -680,10 +658,10 @@ game_core.prototype.server_update = function(){
 	cpoi: this.players.other.points_earned,     //'client points'
 	hcdm: this.players.self.curr_distance_moved, //'host speed'
 	ccdm: this.players.other.curr_distance_moved,//'client speed'
-	tcc : this.cities.top.color,                //'top city color'
-	bcc : this.cities.bottom.color,             //'bottom city color'
-	tcp : this.cities.top.payoff,               //'top city payoff'
-	bcp : this.cities.bottom.payoff,            //'bottom city payoff'
+	tcc : this.targets.top.color,                //'top city color'
+	bcc : this.targets.bottom.color,             //'bottom city color'
+	tcp : this.targets.top.payoff,               //'top city payoff'
+	bcp : this.targets.bottom.payoff,            //'bottom city payoff'
 	cond: this.condition,                        //dynamic or ballistic?
 	de  : this.draw_enabled,                    // true to see angle
 	g2w : this.good2write,                      // true when game's started
@@ -711,105 +689,18 @@ game_core.prototype.server_update = function(){
 
 */
 
-// This function tells the server where the client clicked so
-// that their destination and angle can be updated. 
-game_core.prototype.client_on_click = function( newX, newY ) {
-    // Auto-correcting input, but only between rounds
-    if (this.condition == 'ballistic' && !this.draw_enabled) {
-	if (this.distance_between({x : newX, y : newY},
-				  this.cities.top.location) < this.cities.top.outer_radius) {
-	    newX = this.cities.top.location.x;
-	    newY = this.cities.top.location.y;
-	} else if (this.distance_between({x : newX, y: newY},
-					 this.cities.bottom.location) < this.cities.bottom.outer_radius) {
-	    newX = this.cities.bottom.location.x;
-	    newY = this.cities.bottom.location.y;
-	}
-    }
-    
-    oldX = this.players.self.pos.x;
-    oldY = this.players.self.pos.y;
-    dx = newX - oldX;
-    dy = newY - oldY;
+// Little helper function to draw instructions at the bottom in a nice style
+game_core.prototype.client_draw_info = function(info) {
 
-    // Complicated logic. If you're in the dynamic condition, your clicks will
-    // ALWAYS register. If you're in the ballistic condition, they'll only register
-    // if you're in the pre- (or between-)game period where nothing's being written.
-    if((this.condition == "ballistic" && !this.good2write) || 
-       this.condition == "dynamic") {
-	console.log("Woop, your click was received")
-	this.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
-	this.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
+    //Draw information shared by both players
+    this.ctx.font = "8pt Helvetica";
+    this.ctx.fillStyle = 'rgba(255,255,255,1)';
+    this.ctx.fillText(info, 10 , 465); 
 
+    //Reset the style back to full white.
+    this.ctx.fillStyle = 'rgba(255,255,255,1)';
 
-	// Send this information to server so that other player (and server) 
-	// can update information
-	info_packet = ("c." + this.players.self.angle + 
-		       "."  + this.players.self.destination.x +
-		       "."  + this.players.self.destination.y);
-	this.socket.send(info_packet);
-    } //end the if statement for ballistic condition
-}; // client_on_click
-
-// This function is at the center of a difficult problem you have to
-// deal with in networking -- everybody has different INSTANCES of the
-// game. The server has its own, and both players have theirs
-// too. This can get confusing because the server will update a
-// variable, and the variable of the same name won't change in the
-// clients (because they have a different instance of it). To make
-// sure everybody's on the same page, the server regularly sends news
-// about its variables to the clients so that they can update their variables
-// to reflect changes.
-game_core.prototype.client_onserverupdate_recieved = function(data){
-
-    //Lets clarify the information we have locally. One of the players is 'hosting' and
-    //the other is a joined in client, so we name these host and client for making sure
-    //the positions we get from the server are mapped onto the correct local sprites
-    var player_host = this.players.self.host ?  this.players.self : this.players.other;
-    var player_client = this.players.self.host ?  this.players.other : this.players.self;
-    var this_player = this.players.self;
-        
-    // Update client versions of variables with data received from server
-    if(data.hpos) 
-	player_host.pos = this.pos(data.hpos); 
-    if(data.cpos) 
-	player_client.pos = this.pos(data.cpos);
-    
-    player_host.points_earned = data.hpoi;
-    player_client.points_earned = data.cpoi;
-    player_host.curr_distance_moved = data.hcdm;
-    player_client.curr_distance_moved = data.ccdm;
-    this.cities.top.payoff = data.tcp;
-    this.cities.bottom.payoff = data.bcp; 
-    this.cities.top.color = data.tcc;
-    this.cities.bottom.color = data.bcc;
-    this.condition = data.cond;
-    this.draw_enabled = data.de;
-    this.good2write = data.g2w;
-
-}; //game_core.client_onserverupdate_recieved
-
-game_core.prototype.client_update = function() {
-    //Clear the screen area
-    this.ctx.clearRect(0,0,720,480);
-
-    //draw help/information if required
-    this.client_draw_info("Instructions: Click where you want to go");
-
-    //Draw cities first, so in background
-    this.players.self.draw_cities();
-
-    //Draw opponent next
-    this.players.other.draw();
-
-    // Draw points scoreboard 
-    this.ctx.fillText("Money earned: $" + (this.players.self.points_earned / 100).toFixed(2), 300, 15);
-    this.ctx.fillText("Games remaining: " + this.games_remaining, 580, 15)
-
-    //And then we draw ourself so we're always in front
-    this.players.self.draw();
-
-}; //game_core.update_client
+}; //game_core.client_draw_help
 
 game_core.prototype.create_physics_simulation = function() {    
     return setInterval(function(){
@@ -889,10 +780,10 @@ game_core.prototype.server_reset_positions = function() {
 // This also gets called at the beginning of every new game.
 // It randomizes payoffs, resets colors, and makes the targets "fresh and
 // available" again.
-game_core.prototype.server_reset_cities = function() {
+game_core.prototype.server_reset_targets = function() {
 
-    top_city = this.cities.top;
-    bottom_city = this.cities.bottom;
+    top_city = this.targets.top;
+    bottom_city = this.targets.bottom;
     top_city.color = bottom_city.color = 'white';
     top_city.visited = bottom_city.visited = false;
 
@@ -900,15 +791,15 @@ game_core.prototype.server_reset_cities = function() {
     var r = Math.floor(Math.random() * 2);
 
     if (r == 0) {
-	this.cities.top.payoff = 1;
-	this.cities.bottom.payoff = 4;
+	this.targets.top.payoff = 1;
+	this.targets.bottom.payoff = 4;
 	this.best_city_string = 'bottom';
     } else {
-	this.cities.top.payoff = 4;
-	this.cities.bottom.payoff = 1;
+	this.targets.top.payoff = 4;
+	this.targets.bottom.payoff = 1;
 	this.best_city_string = 'top';
     }
-}; //game_core.server_reset_cities
+}; //game_core.server_reset_targets
 
 game_core.prototype.client_reset_positions = function() {
 
@@ -936,9 +827,9 @@ game_core.prototype.server_newgame = function() {
     this.players.self.speed = 0;
     this.players.other.speed = 0;
 
-    // Tell the server about cities being enabled, so it can use it as a flag elsewhere
-    this.players.self.cities_enabled = true;
-    this.players.other.cities_enabled = true;
+    // Tell the server about targets being enabled, so it can use it as a flag elsewhere
+    this.players.self.targets_enabled = true;
+    this.players.other.targets_enabled = true;
 
     // Don't want to write to file during countdown -- too confusing
     this.good2write = false;
@@ -953,8 +844,8 @@ game_core.prototype.server_newgame = function() {
     //Reset positions
     this.server_reset_positions();
 
-    //Reset cities
-    this.server_reset_cities();
+    //Reset targets
+    this.server_reset_targets();
 
     //Tell clients about it so they can call their newgame procedure (which does countdown)
     this.instance.player_client.send('s.n.');
@@ -982,8 +873,9 @@ game_core.prototype.server_newgame = function() {
 game_core.prototype.client_newgame = function(data) {
     if (this.games_remaining == 0) {
 	    // Redirect to exit survey
-	    var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
-	    URL += '?workerId=' + this.players.self.id;
+//	    var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
+        URL = 'game_over.html';
+	    URL += '?id=' + this.players.self.id;
 	    window.location.replace(URL);
     } else {
 	    // Decrement number of games remaining
@@ -1001,9 +893,9 @@ game_core.prototype.client_newgame = function(data) {
     player_host.destination = null;
     player_client.destination = null;
 
-    // They SHOULD see the cities information
-    this.players.self.cities_enabled = true;
-    this.players.other.cities_enabled = true;
+    // They SHOULD see the targets information
+    this.players.self.targets_enabled = true;
+    this.players.other.targets_enabled = true;
 
     console.log("condition is " + this.condition)
     // Initiate countdown (with timeouts)
@@ -1069,129 +961,6 @@ game_core.prototype.client_onhostgame = function() {
     //Make sure we start in the correct place as the host.
     this.client_reset_positions();
 }; //client_onhostgame
-
-game_core.prototype.client_onconnected = function(data) {
-
-    //The server responded that we are now in a game,
-    //this lets us store the information about ourselves
-    
-    this.players.self.id = data.id;
-    this.players.self.online = true;
-
-}; //client_onconnected
-
-// This is where clients parse messages from the server. If there's
-// another message you need to receive, just add another case here. To
-// see the corresponding function where the server parses messages
-// from clients, look for "onMessage" in game.server.js.
-game_core.prototype.client_onnetmessage = function(data) {
-
-    var commands = data.split('.');
-    var command = commands[0];
-    var subcommand = commands[1] || null;
-    var commanddata = commands[2] || null;
-
-    switch(command) {
-    case 's': //server message
-
-	switch(subcommand) {
-
-	    // Permanent Message
-	case 'p' :
-	    this.players.self.message = commanddata;
-	    break;
-
-	case 'm' : 
-	    this.players.self.message = commanddata;
-	    var local_this = this;
-	    setTimeout(function(){local_this.players.self.message = '';}, 1000);
-	    break;
-	    
-	case 'alert' : // Can't play...
-	    alert('You did not enter an ID'); 
-	    window.location.replace('nodejs.org'); break;
-
-	case 'h' : //host a game requested
-	    this.client_onhostgame(); break;
-
-	case 'j' : //join a game requested
-	    this.client_onjoingame(commanddata); break;
-
-	case 'n' : //ready a game requested
-	    this.client_newgame(commanddata); break;
-
-	case 'e' : //end game requested
-	    this.client_ondisconnect(commanddata); break;
-
-	case 'a' : // other player changed angle
-	    this.players.other.angle = commanddata; break;
-	    
-	} //subcommand
-
-        break; //'s'
-    } //command
-                
-}; //client_onnetmessage
-
-game_core.prototype.client_ondisconnect = function(data) {
-
-    // Everything goes offline!
-    this.players.self.info_color = 'rgba(255,255,255,0.1)';
-    this.players.self.state = 'not-connected';
-    this.players.self.online = false;
-    this.players.self.destination = null;
-    this.players.other.info_color = 'rgba(255,255,255,0.1)';
-    this.players.other.state = 'not-connected';
-    
-    if(this.games_remaining == 0) {
-        // If the game is done, redirect them to an exit survey
-	    URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
-	    URL += '?workerId=' + this.players.self.id;
-	    window.location.replace(URL);
-    } else {
-	    // Otherwise, redirect them to a "we're sorry, the other player disconnected" page
-	    URL = 'http://perceptsconcepts.psych.indiana.edu/rts/disconnected';
-	    URL += '?workerId=' + this.players.self.id;
-	    window.location.replace(URL);
-    }
-}; //client_ondisconnect
-
-// Associates socket.io actions with particular functions in this class.
-game_core.prototype.client_connect_to_server = function() {
-        
-    //Store a local reference to our connection to the server
-    this.socket = io.connect();
-
-    //When we connect, we are not 'connected' until we have a server id
-    //and are placed in a game by the server. The server sends us a message for that.
-    this.socket.on('connect', function(){
-	    this.players.self.state = 'connecting';
-	}.bind(this));
-
-    //Sent when we are disconnected (network, server down, etc)
-    this.socket.on('disconnect', this.client_ondisconnect.bind(this));
-    //Sent each tick of the server simulation. This is our authoritive update
-    this.socket.on('onserverupdate', this.client_onserverupdate_recieved.bind(this));
-    //Handle when we connect to the server, showing state and storing id's.
-    this.socket.on('onconnected', this.client_onconnected.bind(this));
-    //On error we just show that we are not connected for now. Can print the data.
-    this.socket.on('error', this.client_ondisconnect.bind(this));
-    //On message from the server, we parse the commands and send it to the handlers
-    this.socket.on('message', this.client_onnetmessage.bind(this));
-}; //game_core.client_connect_to_server
-
-// Little helper function to draw instructions at the bottom in a nice style
-game_core.prototype.client_draw_info = function(info) {
-
-    //Draw information shared by both players
-    this.ctx.font = "8pt Helvetica";
-    this.ctx.fillStyle = 'rgba(255,255,255,1)';
-    this.ctx.fillText(info, 10 , 465); 
-
-    //Reset the style back to full white.
-    this.ctx.fillStyle = 'rgba(255,255,255,1)';
-
-}; //game_core.client_draw_help
 
 // Just in case we want to draw from Gaussian to get noise on movement...
 function NormalDistribution(sigma, mu) {
