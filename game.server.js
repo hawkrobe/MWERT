@@ -11,9 +11,7 @@
     var
         game_server = module.exports = { games : {}, game_count:0 },
         UUID        = require('node-uuid'),
-	fs          = require('fs'),
-	database    = require(__dirname + "/database"),
- 	connection  = database.getConnection(),
+        fs          = require('fs'),
         verbose     = true;
 
 //Since we are sharing code with the browser, we
@@ -113,9 +111,6 @@ game_server.createGame = function(player) {
     // When workers are directed to the page, they specify which
     // version of the task they're running. 
     thegame.gamecore.condition = player.condition;
-
-    // Pass the database connection to the game
-    thegame.gamecore.mysql_conn = connection;
 
     //Start updating the game loop on the server
     thegame.gamecore.update();

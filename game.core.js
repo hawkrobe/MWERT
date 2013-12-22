@@ -119,8 +119,6 @@ var game_core = function(game_instance){
     //Client specific initialisation
     if(!this.server) {
             
-	//Connect to the socket.io server!
-	this.client_connect_to_server();
 
 	this.players.other.color = '#212121';
 	this.players.self.color = '#212121';
@@ -931,20 +929,6 @@ game_core.prototype.client_reset_positions = function() {
 // something, we'll still know what to pay them.
 
 game_core.prototype.server_newgame = function() {
-    // Always update database to reflect outcome to this point
-    var sql1 = 'UPDATE game_participant SET bonus_pay = ' + (this.players.self.points_earned / 100).toFixed(2); 
-    sql1 += ' WHERE workerId = "' + this.players.self.instance.userid + '"';
-    this.mysql_conn.query(sql1, function(err, rows, fields) {
-	    if (err) throw err;
-	    console.log('Updated sql with command: ', sql1);
-	});
-    var sql2 = 'UPDATE game_participant SET bonus_pay = ' + (this.players.other.points_earned / 100).toFixed(2); 
-    sql2 += ' WHERE workerId = "' + this.players.other.instance.userid + '"';
-    this.mysql_conn.query(sql2, function(err, rows, fields) {
-	    if (err) throw err;
-	    console.log('Updated sql with command: ', sql2);
-	});
-
     // Update number of games remaining
     this.games_remaining -= 1;
 
@@ -983,13 +967,13 @@ game_core.prototype.server_newgame = function() {
     // made valid choices so the function must be checked over and over. It's in
     // server_update_physics.
     if(this.condition == "dynamic"){
-	// After countdown, players start moving, we start writing data, and clock resets
-	setTimeout(function(){
-		local_this.good2write = true;
-		local_this.draw_enabled = true;
-		local_this.players.self.speed = local_this.global_speed;
-		local_this.players.other.speed = local_this.global_speed;
-		local_this.game_clock = 0;
+	    // After countdown, players start moving, we start writing data, and clock resets
+	    setTimeout(function(){
+		    local_this.good2write = true;
+		    local_this.draw_enabled = true;
+		    local_this.players.self.speed = local_this.global_speed;
+		    local_this.players.other.speed = local_this.global_speed;
+		    local_this.game_clock = 0;
 	    }, 3000);
     } 
 };
@@ -997,13 +981,13 @@ game_core.prototype.server_newgame = function() {
 // Restarts things on the client side. Necessary for iterated games.
 game_core.prototype.client_newgame = function(data) {
     if (this.games_remaining == 0) {
-	// Redirect to exit survey
-	var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
-	URL += '?workerId=' + this.players.self.id;
-	window.location.replace(URL);
+	    // Redirect to exit survey
+	    var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
+	    URL += '?workerId=' + this.players.self.id;
+	    window.location.replace(URL);
     } else {
-	// Decrement number of games remaining
-	this.games_remaining -= 1;
+	    // Decrement number of games remaining
+	    this.games_remaining -= 1;
     }
 
     var player_host = this.players.self.host ?  this.players.self : this.players.other;
@@ -1124,8 +1108,8 @@ game_core.prototype.client_onnetmessage = function(data) {
 	    break;
 	    
 	case 'alert' : // Can't play...
-	    alert('You must first accept the HIT through Mechanical Turk'); 
-	    window.location.replace('https://www.mturk.com/mturk/welcome'); break;
+	    alert('You did not enter an ID'); 
+	    window.location.replace('nodejs.org'); break;
 
 	case 'h' : //host a game requested
 	    this.client_onhostgame(); break;
@@ -1159,16 +1143,16 @@ game_core.prototype.client_ondisconnect = function(data) {
     this.players.other.info_color = 'rgba(255,255,255,0.1)';
     this.players.other.state = 'not-connected';
     
-    // If the game is basically done anyway, redirect them to an exit survey
     if(this.games_remaining == 0) {
-	URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
-	URL += '?workerId=' + this.players.self.id;
-	window.location.replace(URL);
+        // If the game is done, redirect them to an exit survey
+	    URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
+	    URL += '?workerId=' + this.players.self.id;
+	    window.location.replace(URL);
     } else {
-	// Redirect them to a "we're sorry, the other player disconnected" page
-	URL = 'http://perceptsconcepts.psych.indiana.edu/rts/disconnected';
-	URL += '?workerId=' + this.players.self.id;
-	window.location.replace(URL);
+	    // Otherwise, redirect them to a "we're sorry, the other player disconnected" page
+	    URL = 'http://perceptsconcepts.psych.indiana.edu/rts/disconnected';
+	    URL += '?workerId=' + this.players.self.id;
+	    window.location.replace(URL);
     }
 }; //client_ondisconnect
 

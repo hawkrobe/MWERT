@@ -13,8 +13,6 @@ var
     app             = require('express')(),
     UUID            = require('node-uuid'),
     server          = require('http').createServer(app),
-    database        = require(__dirname + "/database"),
-    connection      = database.getConnection(),
     sio             = require('socket.io').listen(server),
     verbose         = true;
 
@@ -92,17 +90,10 @@ sio.sockets.on('connection', function (client) {
     var id = query.id;
     var condition = query.condition;
     console.log("id is" + id);
-    var q = 'SELECT EXISTS(SELECT * FROM game_participant WHERE workerId = ' + connection.escape(id) + ') AS b';
-    console.log("query is " + q);
-    // Only let a player join if they are already in the database.
-    // Replace game_participant with the name of the table where you're keeping participants
-    connection.query(q, function(err, results) {
-	    // Only let a player join if they are already in the database.
-	    // Otherwise, send an alert message
-        player_exists = results[0].b;
-	if (id && player_exists) {
-	    console.log('A player with workerid ' + id
-			+ ' connected!');
+    // Check to make sure id was correctly entered
+	if (id) {
+	    console.log('A player with id ' + id
+			        + ' connected!');
 	    client.userid = id;
 	    client.condition = condition;
 	    //tell the player they connected, giving them their id
@@ -114,7 +105,7 @@ sio.sockets.on('connection', function (client) {
 	    //Now we want to handle some of the messages that clients will send.
 	    //They send messages here, and we send them to the game_server to handle.
 	    client.on('message', function(m) {
-		game_server.onMessage(client, m);
+		    game_server.onMessage(client, m);
 	    }); //client.on message
 	    
 	    //Useful to know when someone connects
@@ -124,25 +115,24 @@ sio.sockets.on('connection', function (client) {
 	    //about that as well, so it can remove them from the game they are
 	    //in, and make sure the other player knows that they left and so on.
 	    client.on('disconnect', function () {
-		
-		//Useful to know when soomeone disconnects
-		if (client.userid)
-		    console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game.id);
-		
-		//If the client was in a game, set by game_server.findGame,
-		//we can tell the game server to update that game state.
-			    if(client.userid && client.game && client.game.id) {
 		    
+		    //Useful to know when soomeone disconnects
+		    if (client.userid)
+		        console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game.id);
+		    
+		    //If the client was in a game, set by game_server.findGame,
+		    //we can tell the game server to update that game state.
+			if(client.userid && client.game && client.game.id) {
+		        
 				//player leaving a game should destroy that game
 				game_server.endGame(client.game.id, client.userid);
-		    
-			    } //client.game_id
-			    
-			}); //client.on disconnect
-		    
-		} else {
-		    client.userid = 'none';
-		    client.send('s.alert');
-		}
-	    });
-    }); //sio.sockets.on connection
+		        
+			} //client.game_id
+			
+		}); //client.on disconnect
+		
+	} else {
+		client.userid = 'none';
+		client.send('s.alert');
+	}
+});
