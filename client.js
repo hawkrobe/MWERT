@@ -17,34 +17,34 @@ window.onload = function(){
     
     //Create our game client instance.
     game = new game_core();
-
-	//Connect to the socket.io server!
-	client_connect_to_server(game);
-
-	game.players.other.color = '#212121';
-	game.players.self.color = '#212121';
-	
+    
+    //Connect to the socket.io server!
+    client_connect_to_server(game);
+    
+    game.players.other.color = '#212121';
+    game.players.self.color = '#212121';
+    
     //Fetch the viewport
     game.viewport = document.getElementById('viewport');
     
     //Adjust their size
     game.viewport.width = game.world.width;
     game.viewport.height = game.world.height;
-
-	//Assign click handler ONCE, with the associated data.
-	$('#viewport').click(function(e){
+    
+    //Assign click handler ONCE, with the associated data.
+    $('#viewport').click(function(e){
         console.log("click");
-	    e.preventDefault();
-	    // e.pageX is relative to whole page -- we want
-	    // relative to GAME WORLD (i.e. viewport)
-	    var offset = $(this).offset(); 
-	    var relX = e.pageX - offset.left;
-	    var relY = e.pageY - offset.top;
-	    
-	    // The things we care about are not yet defined, so we
-	    // just pass it off to another function as a callback
-	    client_on_click(game, relX, relY);
-	}); 
+        e.preventDefault();
+        // e.pageX is relative to whole page -- we want
+        // relative to GAME WORLD (i.e. viewport)
+        var offset = $(this).offset(); 
+        var relX = e.pageX - offset.left;
+        var relY = e.pageY - offset.top;
+        
+        // The things we care about are not yet defined, so we
+        // just pass it off to another function as a callback
+        client_on_click(game, relX, relY);
+    }); 
 
     //Fetch the rendering contexts
     game.ctx = game.viewport.getContext('2d');
@@ -65,8 +65,8 @@ client_connect_to_server = function(game) {
     //When we connect, we are not 'connected' until we have a server id
     //and are placed in a game by the server. The server sends us a message for that.
     game.socket.on('connect', function(){
-	    game.players.self.state = 'connecting';
-	}.bind(game));
+        game.players.self.state = 'connecting';
+    }.bind(game));
 
     //Sent when we are disconnected (network, server down, etc)
     game.socket.on('disconnect', client_ondisconnect.bind(game));
@@ -91,14 +91,14 @@ client_ondisconnect = function(data) {
     
     if(this.games_remaining == 0) {
         // If the game is done, redirect them to an exit survey
-	    URL = 'game_over.html';
-	    URL += '?id=' + this.players.self.id;
-	    window.location.replace(URL);
+        URL = 'game_over.html';
+        URL += '?id=' + this.players.self.id;
+        window.location.replace(URL);
     } else {
-	    // Otherwise, redirect them to a "we're sorry, the other player disconnected" page
+        // Otherwise, redirect them to a "we're sorry, the other player disconnected" page
         URL = 'disconnected.html'
-	    URL += '?id=' + this.players.self.id;
-	    window.location.replace(URL);
+        URL += '?id=' + this.players.self.id;
+        window.location.replace(URL);
     }
 }; //client_ondisconnect
 
@@ -122,9 +122,9 @@ client_onserverupdate_recieved = function(data){
         
     // Update client versions of variables with data received from server
     if(data.hpos) 
-	    player_host.pos = this.pos(data.hpos); 
+        player_host.pos = this.pos(data.hpos); 
     if(data.cpos) 
-	    player_client.pos = this.pos(data.cpos);
+        player_client.pos = this.pos(data.cpos);
     
     player_host.points_earned = data.hpoi;
     player_client.points_earned = data.cpoi;
@@ -163,31 +163,31 @@ client_onnetmessage = function(data) {
     switch(command) {
     case 's': //server message
 
-	    switch(subcommand) {    
-	        // Permanent Message
-	    case 'p' :
-	        game.players.self.message = commanddata;
-	        break;
-	    case 'm' : 
-	        game.players.self.message = commanddata;
-	        var local_game = game;
-	        setTimeout(function(){local_game.players.self.message = '';}, 1000);
-	        break;
-	    case 'alert' : // Can't play...
-	        alert('You did not enter an ID'); 
-	        window.location.replace('http://nodejs.org'); break;
-	    case 'h' : //host a game requested
-	        game.client_onhostgame(); break;
-	    case 'j' : //join a game requested
-	        game.client_onjoingame(commanddata); break;
-	    case 'n' : //ready a game requested
-	        game.client_newgame(commanddata); break;
-	    case 'e' : //end game requested
-	        game.client_ondisconnect(commanddata); break;
-	    case 'a' : // other player changed angle
-	        game.players.other.angle = commanddata; break;
-	        
-	    } //subcommand
+        switch(subcommand) {    
+            // Permanent Message
+        case 'p' :
+            game.players.self.message = commanddata;
+            break;
+        case 'm' : 
+            game.players.self.message = commanddata;
+            var local_game = game;
+            setTimeout(function(){local_game.players.self.message = '';}, 1000);
+            break;
+        case 'alert' : // Can't play...
+            alert('You did not enter an ID'); 
+            window.location.replace('http://nodejs.org'); break;
+        case 'h' : //host a game requested
+            game.client_onhostgame(); break;
+        case 'j' : //join a game requested
+            game.client_onjoingame(commanddata); break;
+        case 'n' : //ready a game requested
+            game.client_newgame(commanddata); break;
+        case 'e' : //end game requested
+            game.client_ondisconnect(commanddata); break;
+        case 'a' : // other player changed angle
+            game.players.other.angle = commanddata; break;
+            
+        } //subcommand
         
         break; //'s'
     } //command
@@ -200,15 +200,15 @@ client_onnetmessage = function(data) {
 client_on_click = function(game, newX, newY ) {
     // Auto-correcting input, but only between rounds
     if (game.condition == 'ballistic' && !game.draw_enabled) {
-	    if (game.distance_between({x : newX, y : newY},
-				                  game.targets.top.location) < game.targets.top.outer_radius) {
-	        newX = game.targets.top.location.x;
-	        newY = game.targets.top.location.y;
-	    } else if (game.distance_between({x : newX, y: newY},
-					                     game.targets.bottom.location) < game.targets.bottom.outer_radius) {
-	        newX = game.targets.bottom.location.x;
-	        newY = game.targets.bottom.location.y;
-	    }
+        if (game.distance_between({x : newX, y : newY},
+                                  game.targets.top.location) < game.targets.top.outer_radius) {
+            newX = game.targets.top.location.x;
+            newY = game.targets.top.location.y;
+        } else if (game.distance_between({x : newX, y: newY},
+                                         game.targets.bottom.location) < game.targets.bottom.outer_radius) {
+            newX = game.targets.bottom.location.x;
+            newY = game.targets.bottom.location.y;
+        }
     }
     
     oldX = game.players.self.pos.x;
@@ -221,17 +221,17 @@ client_on_click = function(game, newX, newY ) {
     // if you're in the pre- (or between-)game period where nothing's being written.
     if((game.condition == "ballistic" && !game.good2write) || 
        game.condition == "dynamic") {
-	    console.log("Woop, your click was received")
-	    game.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
-	    game.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
+        console.log("Woop, your click was received")
+        game.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
+        game.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
         
 
-	    // Send game information to server so that other player (and server) 
-	    // can update information
-	    info_packet = ("c." + game.players.self.angle + 
-		               "."  + game.players.self.destination.x +
-		               "."  + game.players.self.destination.y);
-	    game.socket.send(info_packet);
+        // Send game information to server so that other player (and server) 
+        // can update information
+        info_packet = ("c." + game.players.self.angle + 
+                       "."  + game.players.self.destination.x +
+                       "."  + game.players.self.destination.y);
+        game.socket.send(info_packet);
     } //end the if statement for ballistic condition
 }; // client_on_click
 

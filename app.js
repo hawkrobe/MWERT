@@ -47,10 +47,10 @@ app.get( '/*' , function( req, res, next ) {
     //This is the current file they have requested
     var file = req.params[0]; 
 
-	//For debugging, we can track what files are requested.
+    //For debugging, we can track what files are requested.
     if(verbose) console.log('\t :: Express :: file requested : ' + file);
 
-	//Send the requesting client the file.
+    //Send the requesting client the file.
     path = "/Users/hawkrobe/Box Documents/Class Archives/COGS-Q270/Project/Q270Code_and_Data/collective_behavior/";
     res.sendfile(path + file );
 }); //app.get *
@@ -70,8 +70,8 @@ sio.configure(function (){
     sio.set('log level', 0);
 
     sio.set('authorization', function (handshakeData, callback) {
-		callback(null, true); // error first callback style 
-	});
+        callback(null, true); // error first callback style 
+    });
 });
 
 game_server = require('./game.server.js');
@@ -90,48 +90,48 @@ sio.sockets.on('connection', function (client) {
     var condition = query.condition;
     console.log("id is" + id);
     // Check to make sure id was correctly entered
-	if (id) {
-	    console.log('A player with id ' + id
-			        + ' connected!');
-	    client.userid = id;
-	    client.condition = condition;
-	    //tell the player they connected, giving them their id
-	    client.emit('onconnected', { id: client.userid } );
-	    
-	    //Pass off to game.server.js code
-	    game_server.findGame(client);
-	    
-	    //Now we want to handle some of the messages that clients will send.
-	    //They send messages here, and we send them to the game_server to handle.
-	    client.on('message', function(m) {
-		    game_server.onMessage(client, m);
-	    }); //client.on message
-	    
-	    //Useful to know when someone connects
-	    console.log('\t socket.io:: player ' + client.userid + ' connected');
-	    
-	    //When this client disconnects, we want to tell the game server
-	    //about that as well, so it can remove them from the game they are
-	    //in, and make sure the other player knows that they left and so on.
-	    client.on('disconnect', function () {
-		    
-		    //Useful to know when soomeone disconnects
-		    if (client.userid)
-		        console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game.id);
-		    
-		    //If the client was in a game, set by game_server.findGame,
-		    //we can tell the game server to update that game state.
-			if(client.userid && client.game && client.game.id) {
-		        
-				//player leaving a game should destroy that game
-				game_server.endGame(client.game.id, client.userid);
-		        
-			} //client.game_id
-			
-		}); //client.on disconnect
-		
-	} else {
-		client.userid = 'none';
-		client.send('s.alert');
-	}
+    if (id) {
+        console.log('A player with id ' + id
+                    + ' connected!');
+        client.userid = id;
+        client.condition = condition;
+        //tell the player they connected, giving them their id
+        client.emit('onconnected', { id: client.userid } );
+        
+        //Pass off to game.server.js code
+        game_server.findGame(client);
+        
+        //Now we want to handle some of the messages that clients will send.
+        //They send messages here, and we send them to the game_server to handle.
+        client.on('message', function(m) {
+            game_server.onMessage(client, m);
+        }); //client.on message
+        
+        //Useful to know when someone connects
+        console.log('\t socket.io:: player ' + client.userid + ' connected');
+        
+        //When this client disconnects, we want to tell the game server
+        //about that as well, so it can remove them from the game they are
+        //in, and make sure the other player knows that they left and so on.
+        client.on('disconnect', function () {
+            
+            //Useful to know when soomeone disconnects
+            if (client.userid)
+                console.log('\t socket.io:: client disconnected ' + client.userid + ' ' + client.game.id);
+            
+            //If the client was in a game, set by game_server.findGame,
+            //we can tell the game server to update that game state.
+            if(client.userid && client.game && client.game.id) {
+                
+                //player leaving a game should destroy that game
+                game_server.endGame(client.game.id, client.userid);
+                
+            } //client.game_id
+            
+        }); //client.on disconnect
+        
+    } else {
+        client.userid = 'none';
+        client.send('s.alert');
+    }
 });

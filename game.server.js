@@ -43,37 +43,37 @@ game_server.onMessage = function(client,message) {
 
     //Extract important variables
     if (client.game.player_host.userid == client.userid) {
-	var other_client = client.game.player_client;
-	var change_target = client.game.gamecore.players.self;
+    var other_client = client.game.player_client;
+    var change_target = client.game.gamecore.players.self;
     } else {
-	var other_client = client.game.player_host;
-	var change_target = client.game.gamecore.players.other;
+    var other_client = client.game.player_host;
+    var change_target = client.game.gamecore.players.other;
     }
 
-    if(message_type == 'c') {	// Client clicked somewhere
-	// The logic here is as follows: if they're in the 'waiting
-	// room' phase (before cities have been displayed), then a click
-	// always means setting speed back to normal (recall that
-	// players stop when they reach destination). If they're in
-	// the real part of the game, then we have to make sure that
-	// they're outside of a countdown phase before setting their
-	// speed back up. 
-	if(!change_target.cities_enabled)
-	    change_target.speed = client.game.gamecore.global_speed;
-	else 
-	    if(client.game.gamecore.good2write)
-		change_target.speed = client.game.gamecore.global_speed;
+    if(message_type == 'c') {    // Client clicked somewhere
+    // The logic here is as follows: if they're in the 'waiting
+    // room' phase (before cities have been displayed), then a click
+    // always means setting speed back to normal (recall that
+    // players stop when they reach destination). If they're in
+    // the real part of the game, then we have to make sure that
+    // they're outside of a countdown phase before setting their
+    // speed back up. 
+    if(!change_target.cities_enabled)
+        change_target.speed = client.game.gamecore.global_speed;
+    else 
+        if(client.game.gamecore.good2write)
+        change_target.speed = client.game.gamecore.global_speed;
 
-	// Set their (server) angle 
-	change_target.angle = message_parts[1];
+    // Set their (server) angle 
+    change_target.angle = message_parts[1];
 
-	// Set their (server) destination to the point that was clicked
-	change_target.destination = {x : message_parts[2], y : message_parts[3]};
+    // Set their (server) destination to the point that was clicked
+    change_target.destination = {x : message_parts[2], y : message_parts[3]};
 
-	// Notify other client of angle change
-	if(other_client){
-	    other_client.send('s.a.' + message_parts[1]);
-	}
+    // Notify other client of angle change
+    if(other_client){
+        other_client.send('s.a.' + message_parts[1]);
+    }
     }    // else if(...) {
 
     // Any other ways you want players to interact with the game can be added
@@ -87,10 +87,10 @@ game_server.createGame = function(player) {
     var id = UUID();
     //Create a new game instance
     var thegame = {
-	id : id,                    //generate a new id for the game
-	player_host:player,         //so we know who initiated the game
-	player_client:null,         //nobody else joined yet, since its new
-	player_count:1              //for simple checking of state
+    id : id,                    //generate a new id for the game
+    player_host:player,         //so we know who initiated the game
+    player_client:null,         //nobody else joined yet, since its new
+    player_count:1              //for simple checking of state
     };
 
     //Store it in the list of game
@@ -135,34 +135,34 @@ game_server.createGame = function(player) {
 game_server.endGame = function(gameid, userid) {
     var thegame = this.games[gameid];
     if(thegame) {
-	//stop the game updates immediately
-	thegame.gamecore.stop_update();
+    //stop the game updates immediately
+    thegame.gamecore.stop_update();
 
-	//if the game has two players, then one is leaving
-	if(thegame.player_count > 1) {
+    //if the game has two players, then one is leaving
+    if(thegame.player_count > 1) {
 
-	    //send the players the message the game is ending
-	    if(userid == thegame.player_host.userid) {
-		//the host left, oh snap. Let's update the database and tell them.
-		if(thegame.player_client) {
-		    //tell them the game is over, and redirect to exit survey
-		    thegame.player_client.send('s.e');
-		}
-	    } else {
-		//the other player left, we were hosting
-		if(thegame.player_host) {
-		    //tell the client the game is ended
-		    thegame.player_host.send('s.e');
-		    //i am no longer hosting, this game is going down
-		    thegame.player_host.hosting = false;
-		}
-	    }
-	}
-	delete this.games[gameid];
-	this.game_count--;
-	this.log('game removed. there are now ' + this.game_count + ' games' );
+        //send the players the message the game is ending
+        if(userid == thegame.player_host.userid) {
+        //the host left, oh snap. Let's update the database and tell them.
+        if(thegame.player_client) {
+            //tell them the game is over, and redirect to exit survey
+            thegame.player_client.send('s.e');
+        }
+        } else {
+        //the other player left, we were hosting
+        if(thegame.player_host) {
+            //tell the client the game is ended
+            thegame.player_host.send('s.e');
+            //i am no longer hosting, this game is going down
+            thegame.player_host.hosting = false;
+        }
+        }
+    }
+    delete this.games[gameid];
+    this.game_count--;
+    this.log('game removed. there are now ' + this.game_count + ' games' );
     } else {
-	this.log('that game was not found!');
+    this.log('that game was not found!');
     }
 
 }; //game_server.endGame
@@ -184,56 +184,47 @@ game_server.startGame = function(game) {
     //set this flag, so that the update loop can run it.
     game.active = true;
 
-}; //game_server.startGame
+};
 
 // This is the important function that pairs people up into 'rooms'
 // all independent of one another.
 game_server.findGame = function(player) {
-
     this.log('looking for a game. We have : ' + this.game_count);
 
     //if there are any games created, check if one needs another player
     if(this.game_count) {
-	var joined_a_game = false;
-	//Check through the list of all games for an open game
-	for(var gameid in this.games) {
-	    //only care about our own properties.
-	    if(!this.games.hasOwnProperty(gameid)) continue;
-	    //get the game we are checking against
-	    var game_instance = this.games[gameid];
-
-	    //If the game is a player short
-	    if(game_instance.player_count < 2) {
-
-		//someone wants us to join!
-		joined_a_game = true;
-		//increase the player count and store
-		//the player as the client of this game
-		game_instance.player_client = player;
-		game_instance.gamecore.players.other.instance = player;
-		game_instance.gamecore.players.other.id = player.userid;
-		game_instance.player_count++;
-		//Make sure the new player gets sent an update about state of game
-		game_instance.gamecore.update();
-		//start running the game on the server,
-		//which will tell them to respawn/start
-		this.startGame(game_instance);
-
-	    } //if less than 2 players
-	} //for all games
-
-	//now if we didn't join a game,
-	//we must create one
-	if(!joined_a_game) {
-
-	    this.createGame(player);
-
-	} //if no join already
-
-    } else { //if there are any games at all
-
-	//no games? create one!
-	this.createGame(player);
+        var joined_a_game = false;
+        //Check through the list of all games for an open game
+        for(var gameid in this.games) {
+            //only care about our own properties.
+            if(!this.games.hasOwnProperty(gameid)) continue;
+            //get the game we are checking against
+            var game_instance = this.games[gameid];
+            //If the game is a player short
+            if(game_instance.player_count < 2) {                
+                //someone wants us to join!
+                joined_a_game = true;
+                //increase the player count and store
+                //the player as the client of this game
+                game_instance.player_client = player;
+                game_instance.gamecore.players.other.instance = player;
+                game_instance.gamecore.players.other.id = player.userid;
+                game_instance.player_count++;
+                //Make sure the new player gets sent an update about state of game
+                game_instance.gamecore.update();
+                //start running the game on the server,
+                //which will tell them to respawn/start
+                this.startGame(game_instance);
+                
+            }
+        }
+        //now if we didn't join a game,
+        //we must create one
+        if(!joined_a_game) {
+            this.createGame(player);
+        } 
+    } else { 
+        //no games? create one!
+        this.createGame(player);
     }
-
-}; //game_server.findGame
+}; 
