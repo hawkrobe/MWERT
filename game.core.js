@@ -72,8 +72,8 @@ var game_core = function(game_instance){
     
     // Create targets and assign fixed position
     this.targets = {
-	top : new city({x : 360, y : 120}),
-	bottom : new city({x : 360, y : 360})
+	top : new target({x : 360, y : 120}),
+	bottom : new target({x : 360, y : 360})
     };
 
     //We create a player set, passing them
@@ -224,8 +224,8 @@ var game_player = function( game_instance, player_instance ) {
     }    
 }; //game_player.constructor
 
-// A city (aka target) is an object with some properties
-var city = function(location) {
+// A target (aka target) is an object with some properties
+var target = function(location) {
     this.payoff = 1;
     this.location = location;
     this.visited = false;
@@ -342,7 +342,7 @@ game_player.prototype.draw_targets = function() {
 	    var radius = this.game.targets.top.radius;
 	    var outer_radius = this.game.targets.top.outer_radius;
 
-	    // Filled in top city
+	    // Filled in top target
 	    game.ctx.beginPath();
 	    game.ctx.arc(centerX1, centerY1, radius, 0, 2 * Math.PI, false);
 	    game.ctx.fillStyle = this.game.targets.top.color;	
@@ -351,19 +351,19 @@ game_player.prototype.draw_targets = function() {
 	    game.ctx.strokeStyle = 'gray';
 	    game.ctx.stroke();
 
-	    // Outer line around top city
+	    // Outer line around top target
 	    game.ctx.beginPath();
 	    game.ctx.arc(centerX1, centerY1, outer_radius, 0, 2 * Math.PI, false);
 	    game.ctx.stroke();
 	    
-	    // Filled in bottom city
+	    // Filled in bottom target
 	    game.ctx.beginPath();
 	    game.ctx.arc(centerX2, centerY2, radius, 0, 2 * Math.PI, false);
 	    game.ctx.fillStyle = this.game.targets.bottom.color;
 	    game.ctx.fill();
 	    game.ctx.stroke();
 
-	    // Outer line around bottom city
+	    // Outer line around bottom target
 	    game.ctx.beginPath();
 	    game.ctx.arc(centerX2, centerY2, outer_radius, 0, 2 * Math.PI, false);
 	    game.ctx.stroke();
@@ -470,8 +470,8 @@ game_core.prototype.server_update_physics = function() {
 
     host_player = this.players.self;
     other_player = this.players.other;
-    top_city = this.targets.top;
-    bottom_city = this.targets.bottom;
+    top_target = this.targets.top;
+    bottom_target = this.targets.bottom;
 
     // If a player has reached their destination, stop Have to put
     // other wrapper because destination is null until player clicks
@@ -479,62 +479,65 @@ game_core.prototype.server_update_physics = function() {
     // center of the body, which is long. As long as any part of the
     // body is where it should be, we want them to stop.
     if (host_player.destination) {
-    if (host_player.distanceFrom(host_player.destination) < 8)
-        host_player.speed = 0;
+        if (host_player.distanceFrom(host_player.destination) < 8)
+            host_player.speed = 0;
     }
     if (other_player.destination) {
-    if (other_player.distanceFrom(other_player.destination) < 8)
-        other_player.speed = 0;
+        if (other_player.distanceFrom(other_player.destination) < 8)
+            other_player.speed = 0;
     }
 
     // Impose Gaussian noise on movement to create uncertainty
     // Recall base speed is 10, so to avoid moving backward, need that to be rare.
     // Set the standard deviation of the noise distribution.
     if (this.noise) {
-    var noise_sd = 4;
-    var nd = new NormalDistribution(noise_sd,0); 
+        var noise_sd = 4;
+        var nd = new NormalDistribution(noise_sd,0); 
     
-    // If a player isn't moving, no noise. Otherwise they'll wiggle in place.
-    // Use !good2write as a proxy for the 'waiting room' state
-    if (host_player.speed == 0 || !this.good2write) 
-        host_player.noise = 0;
-    else
-        host_player.noise = nd.sample();
-    
-    if (other_player.speed == 0 || !this.good2write)
-        other_player.noise = 0;
-    else 
-        other_player.noise = nd.sample();
+        // If a player isn't moving, no noise. Otherwise they'll wiggle in place.
+        // Use !good2write as a proxy for the 'waiting room' state
+        if (host_player.speed == 0 || !this.good2write) 
+            host_player.noise = 0;
+        else
+            host_player.noise = nd.sample();
+        
+        if (other_player.speed == 0 || !this.good2write)
+            other_player.noise = 0;
+        else 
+            other_player.noise = nd.sample();
     } else {
-    host_player.noise = 0;
-    other_player.noise = 0;
+        host_player.noise = 0;
+        other_player.noise = 0;
     }
+    
+    console.log("Player1 speed is" + host_player.speed);
+    console.log("Player2 speed is" + other_player.speed);
 
     //Handle player one movement (calculate using polar coordinates)
     r1 = host_player.curr_distance_moved = host_player.speed + host_player.noise;
     theta1 = (host_player.angle - 90) * Math.PI / 180;
     host_player.old_state.pos = this.pos( host_player.pos );
     var new_dir = {x : r1 * Math.cos(theta1), 
-           y : r1 * Math.sin(theta1)};  
+                   y : r1 * Math.sin(theta1)};  
     host_player.pos = this.v_add( host_player.old_state.pos, new_dir );
-
+    
     //Handle player two movement
     r2 = other_player.curr_distance_moved = other_player.speed + other_player.noise;
     theta2 = (other_player.angle - 90) * Math.PI / 180;    
     other_player.old_state.pos = this.pos( other_player.pos );
     var other_new_dir = {x : r2 * Math.cos(theta2), 
-             y : r2 * Math.sin(theta2)};  
+                         y : r2 * Math.sin(theta2)};  
     other_player.pos = this.v_add( other_player.old_state.pos, other_new_dir);    
-
+    
     //Keep the players in the world
     this.check_collision( host_player );
     this.check_collision( other_player );
-
-    // Check whether either plays has reached a city
+    
+    // Check whether either plays has reached a target
     // Make sure this can't happen before both players have connected
     if (this.good2write) {
-    this.server_check_for_payoff(host_player, other_player, 'host');
-    this.server_check_for_payoff(other_player, host_player, 'other');
+        this.server_check_for_payoff(host_player, other_player, 'host');
+        this.server_check_for_payoff(other_player, host_player, 'other');
     }
     
     // For ballistic version, if game hasn't started yet, check whether destinations
@@ -542,37 +545,37 @@ game_core.prototype.server_update_physics = function() {
     var condition1 = false;
     var condition2 = false;
     if (!this.good2write && this.instance.player_client && this.condition == 'ballistic') {
-    if (host_player.destination) {
-        condition1 = (this.distance_between(host_player.destination, 
-                        top_city.location) < 10 ||
-              this.distance_between(host_player.destination, 
-                        bottom_city.location) < 10);
-    }
-    if (other_player.destination) {
-        condition2 = (this.distance_between(other_player.destination, 
-                        top_city.location) < 10 ||
-              this.distance_between(other_player.destination, 
-                        bottom_city.location) < 10);
-    }
-    // define some situations once destinations have been set
-    if (condition1 && condition2) {
-        this.instance.player_host.send('s.m.               GO!');
-        this.instance.player_client.send('s.m.               GO!');
-        this.good2write = true;
-        this.draw_enabled = true;
-        this.players.self.speed = this.global_speed;
-        this.players.other.speed = this.global_speed;
-        this.game_clock = 0;
-    } else if (condition1 && !condition2) {
-        this.instance.player_host.send('s.p. Waiting for other player');
-        this.instance.player_client.send('s.p.      Choose a target.');
-    } else if (!condition1 && condition2) {
-        this.instance.player_client.send('s.p. Waiting for other player');
-        this.instance.player_host.send('s.p.      Choose a target.');
-    } else if (this.instance.player_client) {
-        this.instance.player_host.send('s.p.      Choose a target');
-        this.instance.player_client.send('s.p.      Choose a target');
-    }
+        if (host_player.destination) {
+            condition1 = (this.distance_between(host_player.destination, 
+                                                top_target.location) < 10 ||
+                          this.distance_between(host_player.destination, 
+                                                bottom_target.location) < 10);
+        }
+        if (other_player.destination) {
+            condition2 = (this.distance_between(other_player.destination, 
+                                                top_target.location) < 10 ||
+                          this.distance_between(other_player.destination, 
+                                                bottom_target.location) < 10);
+        }
+        // define some situations once destinations have been set
+        if (condition1 && condition2) {
+            this.instance.player_host.send('s.m.               GO!');
+            this.instance.player_client.send('s.m.               GO!');
+            this.good2write = true;
+            this.draw_enabled = true;
+            this.players.self.speed = this.global_speed;
+            this.players.other.speed = this.global_speed;
+            this.game_clock = 0;
+        } else if (condition1 && !condition2) {
+            this.instance.player_host.send('s.p. Waiting for other player');
+            this.instance.player_client.send('s.p.      Choose a target.');
+        } else if (!condition1 && condition2) {
+            this.instance.player_client.send('s.p. Waiting for other player');
+            this.instance.player_host.send('s.p.      Choose a target.');
+        } else if (this.instance.player_client) {
+            this.instance.player_host.send('s.p.      Choose a target');
+            this.instance.player_client.send('s.p.      Choose a target');
+        }
     }
 }; //game_core.server_update_physics
 
@@ -580,87 +583,87 @@ game_core.prototype.server_update_physics = function() {
 // players get payoffs (i.e. if they're close, the other player is far, and the
 // target hasn't been reached yet). If you want to change the "win" condition, it's here.
 game_core.prototype.server_check_for_payoff = function(player1, player2, whoisplayer1){
-
-    // Check whether players have reached 
-    var top_city = this.targets.top;
-    var bottom_city = this.targets.bottom;
     
-    // If player1 reaches the top city before player2, reward them and
+    // Check whether players have reached 
+    var top_target = this.targets.top;
+    var bottom_target = this.targets.bottom;
+    
+    // If player1 reaches the top target before player2, reward them and
     // end the game
-    if (player1.distanceFrom(top_city.location) < top_city.radius + 8
-    && !top_city.visited
-    && player2.distanceFrom(top_city.location) > top_city.outer_radius + 8) {
-    top_city.visited = true;
-    top_city.color = player1.color;
-    player1.points_earned += top_city.payoff;
-    bottom_city.visited = true;
-    bottom_city.color = player2.color;
-    player2.points_earned += bottom_city.payoff;
-    if (whoisplayer1 == 'host') { 
-        this.instance.player_host.send('s.m.    You earned ' + top_city.payoff + '\xA2');
-        this.instance.player_client.send('s.m.    You earned ' + bottom_city.payoff + '\xA2');
-    } else if (whoisplayer1 == 'other') {
-        this.instance.player_host.send('s.m.    You earned ' + bottom_city.payoff + '\xA2');
-        this.instance.player_client.send('s.m.    You earned ' + top_city.payoff + '\xA2');
-    }
-    // If it's a tie, no one wins and game over (i.e. set both targets to visited)
-    } else if(player1.distanceFrom(top_city.location) < top_city.radius + 8
-          && !top_city.visited
-          && player2.distanceFrom(top_city.location) < top_city.outer_radius + 8) {
-    // Let them know they tied...
-    this.instance.player_client.send('s.m.Tie! No money awarded!');
-    this.instance.player_host.send('s.m.Tie! No money awarded!');
-    top_city.visited = true;
-    bottom_city.visited = true;
-    top_city.color = 'black';
+    if (player1.distanceFrom(top_target.location) < top_target.radius + 8
+        && !top_target.visited
+        && player2.distanceFrom(top_target.location) > top_target.outer_radius + 8) {
+        top_target.visited = true;
+        top_target.color = player1.color;
+        player1.points_earned += top_target.payoff;
+        bottom_target.visited = true;
+        bottom_target.color = player2.color;
+        player2.points_earned += bottom_target.payoff;
+        if (whoisplayer1 == 'host') { 
+            this.instance.player_host.send('s.m.    You earned ' + top_target.payoff + '\xA2');
+            this.instance.player_client.send('s.m.    You earned ' + bottom_target.payoff + '\xA2');
+        } else if (whoisplayer1 == 'other') {
+            this.instance.player_host.send('s.m.    You earned ' + bottom_target.payoff + '\xA2');
+            this.instance.player_client.send('s.m.    You earned ' + top_target.payoff + '\xA2');
+        }
+        // If it's a tie, no one wins and game over (i.e. set both targets to visited)
+    } else if(player1.distanceFrom(top_target.location) < top_target.radius + 8
+              && !top_target.visited
+              && player2.distanceFrom(top_target.location) < top_target.outer_radius + 8) {
+        // Let them know they tied...
+        this.instance.player_client.send('s.m.Tie! No money awarded!');
+        this.instance.player_host.send('s.m.Tie! No money awarded!');
+        top_target.visited = true;
+        bottom_target.visited = true;
+        top_target.color = 'black';
     }    
-
-    // Same thing for bottom city
-    if (player1.distanceFrom(bottom_city.location) < bottom_city.radius + 8
-    && !bottom_city.visited
-    && player2.distanceFrom(bottom_city.location) > bottom_city.outer_radius + 8) {
-    bottom_city.visited = true;
-    top_city.visited = true;
-    top_city.color = player2.color;
-    bottom_city.color = player1.color;
-    player1.points_earned += bottom_city.payoff;
-    player2.points_earned += top_city.payoff;
-    if (whoisplayer1 == 'host') { 
-        this.instance.player_host.send('s.m.     You earned ' + bottom_city.payoff + '\xA2');
-        this.instance.player_client.send('s.m.     You earned ' + top_city.payoff + '\xA2');
-    } else if (whoisplayer1 == 'other') {
-        this.instance.player_host.send('s.m.     You earned ' + top_city.payoff + '\xA2');
-        this.instance.player_client.send('s.m.     You earned ' + bottom_city.payoff + '\xA2');
+    
+    // Same thing for bottom target
+    if (player1.distanceFrom(bottom_target.location) < bottom_target.radius + 8
+        && !bottom_target.visited
+        && player2.distanceFrom(bottom_target.location) > bottom_target.outer_radius + 8) {
+        bottom_target.visited = true;
+        top_target.visited = true;
+        top_target.color = player2.color;
+        bottom_target.color = player1.color;
+        player1.points_earned += bottom_target.payoff;
+        player2.points_earned += top_target.payoff;
+        if (whoisplayer1 == 'host') { 
+            this.instance.player_host.send('s.m.     You earned ' + bottom_target.payoff + '\xA2');
+            this.instance.player_client.send('s.m.     You earned ' + top_target.payoff + '\xA2');
+        } else if (whoisplayer1 == 'other') {
+            this.instance.player_host.send('s.m.     You earned ' + top_target.payoff + '\xA2');
+            this.instance.player_client.send('s.m.     You earned ' + bottom_target.payoff + '\xA2');
+        }
+    } else if(player1.distanceFrom(bottom_target.location) < bottom_target.radius + 8
+              && !bottom_target.visited
+              && player2.distanceFrom(bottom_target.location) < bottom_target.outer_radius + 8) {
+        // Let them know they tied...
+        this.instance.player_client.send('s.m.Tie! No money awarded!');
+        this.instance.player_host.send('s.m.Tie! No money awarded!');
+        top_target.visited = true;
+        bottom_target.visited = true;
+        bottom_target.color = 'black';
     }
-    } else if(player1.distanceFrom(bottom_city.location) < bottom_city.radius + 8
-          && !bottom_city.visited
-          && player2.distanceFrom(bottom_city.location) < bottom_city.outer_radius + 8) {
-    // Let them know they tied...
-    this.instance.player_client.send('s.m.Tie! No money awarded!');
-    this.instance.player_host.send('s.m.Tie! No money awarded!');
-    top_city.visited = true;
-    bottom_city.visited = true;
-    bottom_city.color = 'black';
-    }
-
+    
     // If both targets have been marked as visited, we tell the server
     // we're ready to start a new game. But we only do it once, thus the flag.
-    if ((top_city.visited 
-     && bottom_city.visited
-     && !this.newgame_initiated_flag)) {
-
-    console.log("Both targets visited...");
-    this.players.self.speed = 0;
-    this.players.other.speed = 0;
-    this.newgame_initiated_flag = true;
-    var local_this = this;
-
-    // Need to wait a second before resetting so players can see what happened
-    setTimeout(function(){
-        // Keep track of which game we're on
-        local_this.game_number += 1;
-        local_this.newgame_initiated_flag = false;
-        local_this.server_newgame();
+    if ((top_target.visited 
+         && bottom_target.visited
+         && !this.newgame_initiated_flag)) {
+        
+        console.log("Both targets visited...");
+        this.players.self.speed = 0;
+        this.players.other.speed = 0;
+        this.newgame_initiated_flag = true;
+        var local_this = this;
+        
+        // Need to wait a second before resetting so players can see what happened
+        setTimeout(function(){
+            // Keep track of which game we're on
+            local_this.game_number += 1;
+            local_this.newgame_initiated_flag = false;
+            local_this.server_newgame();
         }, 1500);
     }
 }; //game_core.server_check_for_payoff
@@ -668,57 +671,57 @@ game_core.prototype.server_check_for_payoff = function(player1, player2, whoispl
 // Notifies clients of changes on the server side. Server totally
 // handles position and points.
 game_core.prototype.server_update = function(){
-
+    
     //Make a snapshot of the current state, for updating the clients
     this.laststate = {
         hpos: this.players.self.pos,                //'host position', the game creators position
         cpos: this.players.other.pos,               //'client position', the person that joined, their position
         hpoi: this.players.self.points_earned,      //'host points'
-    cpoi: this.players.other.points_earned,     //'client points'
-    hcdm: this.players.self.curr_distance_moved, //'host speed'
-    ccdm: this.players.other.curr_distance_moved,//'client speed'
-    tcc : this.targets.top.color,                //'top city color'
-    bcc : this.targets.bottom.color,             //'bottom city color'
-    tcp : this.targets.top.payoff,               //'top city payoff'
-    bcp : this.targets.bottom.payoff,            //'bottom city payoff'
-    cond: this.condition,                        //dynamic or ballistic?
-    de  : this.draw_enabled,                    // true to see angle
-    g2w : this.good2write,                      // true when game's started
+        cpoi: this.players.other.points_earned,     //'client points'
+        hcdm: this.players.self.curr_distance_moved, //'host speed'
+        ccdm: this.players.other.curr_distance_moved,//'client speed'
+        tcc : this.targets.top.color,                //'top target color'
+        bcc : this.targets.bottom.color,             //'bottom target color'
+        tcp : this.targets.top.payoff,               //'top target payoff'
+        bcp : this.targets.bottom.payoff,            //'bottom target payoff'
+        cond: this.condition,                        //dynamic or ballistic?
+        de  : this.draw_enabled,                    // true to see angle
+        g2w : this.good2write,                      // true when game's started
     };
-
-
+    
+    
     //Send the snapshot to the 'host' player
     if(this.players.self.instance) {
         this.players.self.instance.emit( 'onserverupdate', this.laststate );
     }
-
+    
     //Send the snapshot to the 'client' player
     if(this.players.other.instance) {
         this.players.other.instance.emit( 'onserverupdate', this.laststate );
     }
-
+    
 }; //game_core.server_update
 
 /*
-
- Client side functions
-
-    These functions below are specific to the client side only,
-    and usually start with client_* to make things clearer.
-
+  
+  Client side functions
+  
+  These functions below are specific to the client side only,
+  and usually start with client_* to make things clearer.
+  
 */
 
 // Little helper function to draw instructions at the bottom in a nice style
 game_core.prototype.client_draw_info = function(info) {
-
+    
     //Draw information shared by both players
     this.ctx.font = "8pt Helvetica";
     this.ctx.fillStyle = 'rgba(255,255,255,1)';
     this.ctx.fillText(info, 10 , 465); 
-
+    
     //Reset the style back to full white.
     this.ctx.fillStyle = 'rgba(255,255,255,1)';
-
+    
 }; //game_core.client_draw_help
 
 game_core.prototype.create_physics_simulation = function() {    
@@ -726,7 +729,7 @@ game_core.prototype.create_physics_simulation = function() {
         this.update_physics();
         this.game_clock += 1;
         if (this.good2write) {
-        this.writeData();
+            this.writeData();
         }
     }.bind(this), this.tick_frequency);
 }; //game_core.client_create_physics_simulation
@@ -738,19 +741,19 @@ game_core.prototype.writeData = function() {
     // Some funny business going on with angles being negative, so we correct for that
     var host_angle_to_write = this.players.self.angle;
     var other_angle_to_write = this.players.other.angle;
-    var file_path;
+    var file_path ;
     if (this.players.self.angle < 0)
-    host_angle_to_write = parseInt(this.players.self.angle, 10) + 360;
+        host_angle_to_write = parseInt(this.players.self.angle, 10) + 360;
     if (this.players.other.angle < 0)
-    other_angle_to_write = parseInt(this.players.other.angle, 10)  + 360;
+        other_angle_to_write = parseInt(this.players.other.angle, 10)  + 360;
     if (this.condition == "ballistic") 
-    file_path = "data/high_conflict_ballistic/game_" + this.game_id + ".csv";
+        file_path = "data/ballistic/game_" + this.game_id + ".csv";
     else if (this.condition == "dynamic") 
-    file_path = "data/high_conflict_dynamic/game_" + this.game_id + ".csv";
+        file_path = "data/dynamic/game_" + this.game_id + ".csv";
     // Write data for the host player
     var host_data_line = String(this.game_number) + ',';
     host_data_line += String(this.game_clock) + ',';
-    host_data_line += this.best_city_string + ',';
+    host_data_line += this.best_target_string + ',';
     host_data_line += "host,";
     host_data_line += this.players.self.pos.x + ',';
     host_data_line += this.players.self.pos.y + ',';
@@ -767,7 +770,7 @@ game_core.prototype.writeData = function() {
     // Write data for the other player
     var other_data_line = String(this.game_number) + ',';
     other_data_line += String(this.game_clock) + ',';
-    other_data_line += this.best_city_string + ',';
+    other_data_line += this.best_target_string + ',';
     other_data_line += "other,";
     other_data_line += this.players.other.pos.x + ',';
     other_data_line += this.players.other.pos.y + ',';
@@ -801,10 +804,10 @@ game_core.prototype.server_reset_positions = function() {
 // available" again.
 game_core.prototype.server_reset_targets = function() {
 
-    top_city = this.targets.top;
-    bottom_city = this.targets.bottom;
-    top_city.color = bottom_city.color = 'white';
-    top_city.visited = bottom_city.visited = false;
+    top_target = this.targets.top;
+    bottom_target = this.targets.bottom;
+    top_target.color = bottom_target.color = 'white';
+    top_target.visited = bottom_target.visited = false;
 
     // Randomly reset payoffs
     var r = Math.floor(Math.random() * 2);
@@ -812,11 +815,11 @@ game_core.prototype.server_reset_targets = function() {
     if (r == 0) {
     this.targets.top.payoff = 1;
     this.targets.bottom.payoff = 4;
-    this.best_city_string = 'bottom';
+    this.best_target_string = 'bottom';
     } else {
     this.targets.top.payoff = 4;
     this.targets.bottom.payoff = 1;
-    this.best_city_string = 'top';
+    this.best_target_string = 'top';
     }
 }; //game_core.server_reset_targets
 
@@ -881,6 +884,7 @@ game_core.prototype.server_newgame = function() {
         setTimeout(function(){
             local_this.good2write = true;
             local_this.draw_enabled = true;
+            console.log("GOOOOOO!");
             local_this.players.self.speed = local_this.global_speed;
             local_this.players.other.speed = local_this.global_speed;
             local_this.game_clock = 0;
@@ -890,6 +894,7 @@ game_core.prototype.server_newgame = function() {
 
 // Restarts things on the client side. Necessary for iterated games.
 game_core.prototype.client_newgame = function(data) {
+    console.log("new game starting");
     if (this.games_remaining == 0) {
         // Redirect to exit survey
 //        var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
@@ -919,8 +924,7 @@ game_core.prototype.client_newgame = function(data) {
     console.log("condition is " + this.condition)
     // Initiate countdown (with timeouts)
     if (this.condition == 'dynamic') {
-    console.log("In dynamic version!")
-    this.client_countdown();
+        this.client_countdown();
     }
 
     // Set text beneath player
@@ -942,7 +946,7 @@ game_core.prototype.client_countdown = function() {
     setTimeout(function(){
         local_this.players.self.message = '               GO';
     }, 3000);
-
+    
     // Remove message text
     setTimeout(function(){local_this.players.self.message = '';}, 4000);
 }

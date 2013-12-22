@@ -225,7 +225,6 @@ client_on_click = function(game, newX, newY ) {
         game.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
         game.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
         
-
         // Send game information to server so that other player (and server) 
         // can update information
         info_packet = ("c." + game.players.self.angle + 

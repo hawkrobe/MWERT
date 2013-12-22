@@ -52,33 +52,36 @@ game_server.onMessage = function(client,message) {
 
     if(message_type == 'c') {    // Client clicked somewhere
     // The logic here is as follows: if they're in the 'waiting
-    // room' phase (before cities have been displayed), then a click
+    // room' phase (before targets have been displayed), then a click
     // always means setting speed back to normal (recall that
     // players stop when they reach destination). If they're in
     // the real part of the game, then we have to make sure that
     // they're outside of a countdown phase before setting their
     // speed back up. 
-    if(!change_target.cities_enabled)
-        change_target.speed = client.game.gamecore.global_speed;
-    else 
-        if(client.game.gamecore.good2write)
-        change_target.speed = client.game.gamecore.global_speed;
+        if(!change_target.targets_enabled) {
+            console.log("Changing speed because targets aren't enabled");
+            change_target.speed = client.game.gamecore.global_speed;
+        } else {
+            if(client.game.gamecore.good2write) {
+                console.log("Changing speed because good 2 write");
+                change_target.speed = client.game.gamecore.global_speed;
+            }
+        }
+        // Set their (server) angle 
+        change_target.angle = message_parts[1];
 
-    // Set their (server) angle 
-    change_target.angle = message_parts[1];
-
-    // Set their (server) destination to the point that was clicked
-    change_target.destination = {x : message_parts[2], y : message_parts[3]};
-
-    // Notify other client of angle change
-    if(other_client){
-        other_client.send('s.a.' + message_parts[1]);
-    }
+        // Set their (server) destination to the point that was clicked
+        change_target.destination = {x : message_parts[2], y : message_parts[3]};
+        
+        // Notify other client of angle change
+        if(other_client){
+            other_client.send('s.a.' + message_parts[1]);
+        }
     }    // else if(...) {
-
+    
     // Any other ways you want players to interact with the game can be added
     // here as "else if" statements.
-
+    
 }; //game_server.onMessage
 
 //Define some required functions
