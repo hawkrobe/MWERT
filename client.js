@@ -53,8 +53,8 @@ window.onload = function(){
     game.ctx.font = '11px "Helvetica"';
 
     //Finally, start the loop
-    client_update.bind(game);
-    client_update();
+    game.update();
+
 }; //window.onload
 
 client_connect_to_server = function(game) {
@@ -235,24 +235,3 @@ client_on_click = function(game, newX, newY ) {
     } //end the if statement for ballistic condition
 }; // client_on_click
 
-client_update = function() {
-    //Clear the screen area
-    this.ctx.clearRect(0,0,720,480);
-
-    //draw help/information if required
-    this.client_draw_info("Instructions: Click where you want to go");
-
-    //Draw targets first, so in background
-    this.players.self.draw_targets();
-
-    //Draw opponent next
-    this.players.other.draw();
-
-    // Draw points scoreboard 
-    this.ctx.fillText("Money earned: $" + (this.players.self.points_earned / 100).toFixed(2), 300, 15);
-    this.ctx.fillText("Games remaining: " + this.games_remaining, 580, 15)
-
-    //And then we draw ourself so we're always in front
-    this.players.self.draw();
-    this.updateid = window.requestAnimationFrame( client_update.bind(this), game.viewport );
-}; //game_core.update_client

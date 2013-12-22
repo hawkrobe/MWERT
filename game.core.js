@@ -116,9 +116,6 @@ var game_core = function(game_instance){
     //we can shut it down at end.
     this.physics_interval_id = this.create_physics_simulation();
     
-    //Client specific initialisation
-//    if(!this.server) {
-
 }; //game_core.constructor
 
 //server side we set the 'game_core' class to a global type, so that
@@ -250,9 +247,9 @@ game_player.prototype.draw = function(){
     // As soon as the countdown is over, it's set to true and they
     // immediately start using that new angle
     if (this.game.draw_enabled) {
-	game.ctx.rotate((this.angle * Math.PI) / 180);
+	    game.ctx.rotate((this.angle * Math.PI) / 180);
     } else {
-	game.ctx.rotate((this.start_angle * Math.PI) / 180);
+	    game.ctx.rotate((this.start_angle * Math.PI) / 180);
     }
     // This draws the triangle
     game.ctx.fillStyle = this.color;
@@ -270,14 +267,14 @@ game_player.prototype.draw = function(){
     
     // Draw destination as an 'x' if it exists
     if (this.destination) {
-	game.ctx.strokeStyle = this.color;
-	game.ctx.beginPath();
-	game.ctx.moveTo(this.destination.x - 5, this.destination.y - 5);
-	game.ctx.lineTo(this.destination.x + 5, this.destination.y + 5);
+	    game.ctx.strokeStyle = this.color;
+	    game.ctx.beginPath();
+	    game.ctx.moveTo(this.destination.x - 5, this.destination.y - 5);
+	    game.ctx.lineTo(this.destination.x + 5, this.destination.y + 5);
 
-	game.ctx.moveTo(this.destination.x + 5, this.destination.y - 5);
-	game.ctx.lineTo(this.destination.x - 5, this.destination.y + 5);
-	game.ctx.stroke();
+	    game.ctx.moveTo(this.destination.x + 5, this.destination.y - 5);
+	    game.ctx.lineTo(this.destination.x - 5, this.destination.y + 5);
+	    game.ctx.stroke();
     }
 
     //Draw tag underneath players
@@ -303,30 +300,30 @@ game_player.prototype.draw = function(){
     game.ctx.beginPath();
     game.ctx.moveTo(145, 12);
     if (this.game.players.self.curr_distance_moved == 0) {
-	game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-	game.ctx.lineTo(145 + 30, 12);
-	game.ctx.stroke();
+	    game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+	    game.ctx.lineTo(145 + 30, 12);
+	    game.ctx.stroke();
     } else {
-	game.ctx.lineWidth = 15;
-	game.ctx.strokeStyle = 'white';
-	game.ctx.lineTo(145 + 3*this.game.players.self.curr_distance_moved.toFixed(2), 12);
-	game.ctx.stroke();
-	game.ctx.lineWidth = 1;
+	    game.ctx.lineWidth = 15;
+	    game.ctx.strokeStyle = 'white';
+	    game.ctx.lineTo(145 + 3*this.game.players.self.curr_distance_moved.toFixed(2), 12);
+	    game.ctx.stroke();
+	    game.ctx.lineWidth = 1;
     }
 
     // Other line...
     game.ctx.beginPath();
     game.ctx.moveTo(145, 37);
     if(this.game.players.other.curr_distance_moved == 0) {
-	game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-	game.ctx.lineTo(145 + 30, 37);
-	game.ctx.stroke();
+	    game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+	    game.ctx.lineTo(145 + 30, 37);
+	    game.ctx.stroke();
     } else {
-	game.ctx.lineWidth = 15;
-	game.ctx.strokeStyle = 'white';
-	game.ctx.lineTo(145 + 3*this.game.players.other.curr_distance_moved.toFixed(2), 37);
-	game.ctx.stroke();
-	game.ctx.lineWidth = 1;
+	    game.ctx.lineWidth = 15;
+	    game.ctx.strokeStyle = 'white';
+	    game.ctx.lineTo(145 + 3*this.game.players.other.curr_distance_moved.toFixed(2), 37);
+	    game.ctx.stroke();
+	    game.ctx.lineWidth = 1;
     }
     game.ctx.stroke();
 
@@ -338,51 +335,51 @@ game_player.prototype.draw = function(){
 game_player.prototype.draw_targets = function() {
     // Draw targets
     if (this.targets_enabled) {
-	var centerX1 = this.game.targets.top.location.x;
-	var centerY1 = this.game.targets.top.location.y;
-	var centerX2 = this.game.targets.bottom.location.x;
-	var centerY2 = this.game.targets.bottom.location.y;
-	var radius = this.game.targets.top.radius;
-	var outer_radius = this.game.targets.top.outer_radius;
+	    var centerX1 = this.game.targets.top.location.x;
+	    var centerY1 = this.game.targets.top.location.y;
+	    var centerX2 = this.game.targets.bottom.location.x;
+	    var centerY2 = this.game.targets.bottom.location.y;
+	    var radius = this.game.targets.top.radius;
+	    var outer_radius = this.game.targets.top.outer_radius;
 
-	// Filled in top city
-	game.ctx.beginPath();
-	game.ctx.arc(centerX1, centerY1, radius, 0, 2 * Math.PI, false);
-	game.ctx.fillStyle = this.game.targets.top.color;	
-	game.ctx.fill();
-	game.ctx.lineWidth = 1;
-	game.ctx.strokeStyle = 'gray';
-	game.ctx.stroke();
+	    // Filled in top city
+	    game.ctx.beginPath();
+	    game.ctx.arc(centerX1, centerY1, radius, 0, 2 * Math.PI, false);
+	    game.ctx.fillStyle = this.game.targets.top.color;	
+	    game.ctx.fill();
+	    game.ctx.lineWidth = 1;
+	    game.ctx.strokeStyle = 'gray';
+	    game.ctx.stroke();
 
-	// Outer line around top city
-	game.ctx.beginPath();
-	game.ctx.arc(centerX1, centerY1, outer_radius, 0, 2 * Math.PI, false);
-	game.ctx.stroke();
-	
-	// Filled in bottom city
-	game.ctx.beginPath();
-	game.ctx.arc(centerX2, centerY2, radius, 0, 2 * Math.PI, false);
-	game.ctx.fillStyle = this.game.targets.bottom.color;
-	game.ctx.fill();
-	game.ctx.stroke();
+	    // Outer line around top city
+	    game.ctx.beginPath();
+	    game.ctx.arc(centerX1, centerY1, outer_radius, 0, 2 * Math.PI, false);
+	    game.ctx.stroke();
+	    
+	    // Filled in bottom city
+	    game.ctx.beginPath();
+	    game.ctx.arc(centerX2, centerY2, radius, 0, 2 * Math.PI, false);
+	    game.ctx.fillStyle = this.game.targets.bottom.color;
+	    game.ctx.fill();
+	    game.ctx.stroke();
 
-	// Outer line around bottom city
-	game.ctx.beginPath();
-	game.ctx.arc(centerX2, centerY2, outer_radius, 0, 2 * Math.PI, false);
-	game.ctx.stroke();
-	
-	// Draw tag next to targets (for payoff info)
-	game.ctx.fillStyle = 'white';
-	game.ctx.font = "15pt Helvetica";
-	targets = this.game.targets;
-	game.ctx.fillText("$0.0" + targets.top.payoff, targets.top.location.x - 27, targets.top.location.y - 50 );
-	game.ctx.fillText("$0.0" + targets.bottom.payoff, targets.bottom.location.x - 27, targets.bottom.location.y + 65);
+	    // Outer line around bottom city
+	    game.ctx.beginPath();
+	    game.ctx.arc(centerX2, centerY2, outer_radius, 0, 2 * Math.PI, false);
+	    game.ctx.stroke();
+	    
+	    // Draw tag next to targets (for payoff info)
+	    game.ctx.fillStyle = 'white';
+	    game.ctx.font = "15pt Helvetica";
+	    targets = this.game.targets;
+	    game.ctx.fillText("$0.0" + targets.top.payoff, targets.top.location.x - 27, targets.top.location.y - 50 );
+	    game.ctx.fillText("$0.0" + targets.bottom.payoff, targets.bottom.location.x - 27, targets.bottom.location.y + 65);
     }
 }; // draw_targets
 
 /*
 
- Common functions
+  Common functions
  
     These functions are shared between client and server, and are generic
     for the game state. The client functions are client_* and server functions
@@ -402,6 +399,28 @@ game_core.prototype.update = function() {
     //schedule the next update
     this.updateid = window.requestAnimationFrame( this.update.bind(this), this.viewport );
 }; //game_core.update
+
+game_core.prototype.client_update = function() {
+    //Clear the screen area
+    this.ctx.clearRect(0,0,720,480);
+
+    //draw help/information if required
+    this.client_draw_info("Instructions: Click where you want to go");
+
+    //Draw targets first, so in background
+    this.players.self.draw_targets();
+
+    //Draw opponent next
+    this.players.other.draw();
+
+    // Draw points scoreboard 
+    this.ctx.fillText("Money earned: $" + (this.players.self.points_earned / 100).toFixed(2), 300, 15);
+    this.ctx.fillText("Games remaining: " + this.games_remaining, 580, 15)
+
+    //And then we draw ourself so we're always in front
+    this.players.self.draw();
+}; //game_core.update_client
+
 
 /*
     Shared between server and client.
