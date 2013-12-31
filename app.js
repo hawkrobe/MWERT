@@ -38,8 +38,7 @@ console.log('\t :: Express :: Listening on port ' + gameport );
 
   Then 'file' will be bound to '/experiments/username/index.html' and
   you need to translate that into the location of that file on your
-  server.  In my case, it was the long "/Library/Server/..." string,
-  but you'll replace it with your own.
+  server. 
 */
 
 app.get( '/*' , function( req, res, next ) {
@@ -51,7 +50,7 @@ app.get( '/*' , function( req, res, next ) {
     if(verbose) console.log('\t :: Express :: file requested : ' + file);
 
     //Send the requesting client the file.
-    path = "/Users/hawkrobe/Box Documents/Class Archives/COGS-Q270/Project/Q270Code_and_Data/collective_behavior/";
+    path = "./";
     res.sendfile(path + file );
 }); //app.get *
 

@@ -57,6 +57,8 @@ window.onload = function(){
 
 }; //window.onload
 
+
+// Associates callback functions corresponding to different socket messages
 client_connect_to_server = function(game) {
     
     //Store a local reference to our connection to the server
@@ -78,8 +80,9 @@ client_connect_to_server = function(game) {
     //game.socket.on('error', game.client_ondisconnect.bind(game));
     //On message from the server, we parse the commands and send it to the handlers
     game.socket.on('message', client_onnetmessage.bind(game));
-}; //game_core.client_connect_to_server
+}; 
 
+// Function that gets called client-side when someone 
 client_ondisconnect = function(data) {
     // Everything goes offline!
     this.players.self.info_color = 'rgba(255,255,255,0.1)';
@@ -100,17 +103,17 @@ client_ondisconnect = function(data) {
         URL += '?id=' + this.players.self.id;
         window.location.replace(URL);
     }
-}; //client_ondisconnect
+};
 
 /* 
-Game function is at the center of a difficult problem you have to deal
-with in networking -- everybody has different INSTANCES of the
-game. The server has its own, and both players have theirs too. This
-can get confusing because the server will update a variable, and the
-variable of the same name won't change in the clients (because they
-have a different instance of it). To make sure everybody's on the same
-page, the server regularly sends news about its variables to the
-clients so that they can update their variables to reflect changes.
+This function is at the center of the problem of networking --
+everybody has different INSTANCES of the game. The server has its own,
+and both players have theirs too. This can get confusing because the
+server will update a variable, and the variable of the same name won't
+change in the clients (because they have a different instance of
+it). To make sure everybody's on the same page, the server regularly
+sends news about its variables to the clients so that they can update
+their variables to reflect changes.
 */
 client_onserverupdate_recieved = function(data){
     //Lets clarify the information we have locally. One of the players is 'hosting' and
@@ -221,7 +224,6 @@ client_on_click = function(game, newX, newY ) {
     // if you're in the pre- (or between-)game period where nothing's being written.
     if((game.condition == "ballistic" && !game.good2write) || 
        game.condition == "dynamic") {
-        console.log("Woop, your click was received")
         game.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
         game.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
         

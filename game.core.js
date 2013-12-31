@@ -510,9 +510,6 @@ game_core.prototype.server_update_physics = function() {
         other_player.noise = 0;
     }
     
-    console.log("Player1 speed is" + host_player.speed);
-    console.log("Player2 speed is" + other_player.speed);
-
     //Handle player one movement (calculate using polar coordinates)
     r1 = host_player.curr_distance_moved = host_player.speed + host_player.noise;
     theta1 = (host_player.angle - 90) * Math.PI / 180;

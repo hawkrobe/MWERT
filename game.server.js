@@ -59,11 +59,9 @@ game_server.onMessage = function(client,message) {
     // they're outside of a countdown phase before setting their
     // speed back up. 
         if(!change_target.targets_enabled) {
-            console.log("Changing speed because targets aren't enabled");
             change_target.speed = client.game.gamecore.global_speed;
         } else {
             if(client.game.gamecore.good2write) {
-                console.log("Changing speed because good 2 write");
                 change_target.speed = client.game.gamecore.global_speed;
             }
         }
