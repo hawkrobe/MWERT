@@ -1,7 +1,7 @@
-Local experiment demo from scratch
-==================================
+Local demo from scratch
+=======================
 
-1. If you've never used git before, it's a popular version control and source code management system. You can install the latest version by following these links for [Mac](https://code.google.com/p/git-osx-installer/downloads/list) or [Windows](http://msysgit.github.com/). On Mac, this will give you a set of command-line tools, and on Windows it will give you a shell to type commands into. More information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
+1. If you've never used git before, it’s a popular version control and source code management system. You can install the latest version by following these links for [Mac](https://code.google.com/p/git-osx-installer/downloads/list) or [Windows](http://msysgit.github.com/). On Mac, this will give you a set of command-line tools, and on Windows it will give you a shell to type commands into. More information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
 
 2. On Mac or Linux, use the Terminal to navigate to the location where you want to create your project, and enter ```git clone https://github.com/hawkrobe/collective_behavior.git``` at the command line to create a local copy of this code. On Windows, use the shell included with Msysgit.
 
