@@ -76,8 +76,6 @@ client_connect_to_server = function(game) {
     game.socket.on('onserverupdate', client_onserverupdate_recieved.bind(game));
     //Handle when we connect to the server, showing state and storing id's.
     game.socket.on('onconnected', client_onconnected.bind(game));
-    //On error we just show that we are not connected for now. Can print the data.
-    //game.socket.on('error', game.client_ondisconnect.bind(game));
     //On message from the server, we parse the commands and send it to the handlers
     game.socket.on('message', client_onnetmessage.bind(game));
 }; 
@@ -85,22 +83,24 @@ client_connect_to_server = function(game) {
 // Function that gets called client-side when someone 
 client_ondisconnect = function(data) {
     // Everything goes offline!
-    this.players.self.info_color = 'rgba(255,255,255,0.1)';
-    this.players.self.state = 'not-connected';
-    this.players.self.online = false;
-    this.players.self.destination = null;
-    this.players.other.info_color = 'rgba(255,255,255,0.1)';
-    this.players.other.state = 'not-connected';
+    game.players.self.info_color = 'rgba(255,255,255,0.1)';
+    game.players.self.state = 'not-connected';
+    game.players.self.online = false;
+    game.players.self.destination = null;
+    game.players.other.info_color = 'rgba(255,255,255,0.1)';
+    game.players.other.state = 'not-connected';
     
-    if(this.games_remaining == 0) {
+    console.log("Disconnecting...");
+
+    if(game.games_remaining == 0) {
         // If the game is done, redirect them to an exit survey
-        URL = 'game_over.html';
-        URL += '?id=' + this.players.self.id;
+        URL = './game_over.html';
+        URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
     } else {
         // Otherwise, redirect them to a "we're sorry, the other player disconnected" page
-        URL = 'disconnected.html'
-        URL += '?id=' + this.players.self.id;
+        URL = './disconnected.html'
+        URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
     }
 };
@@ -143,13 +143,10 @@ client_onserverupdate_recieved = function(data){
 }; //game_core.client_onserverupdate_recieved
 
 client_onconnected = function(data) {
-
     //The server responded that we are now in a game,
-    //this lets us store the information about ourselves
-    
+    //this lets us store the information about ourselves    
     this.players.self.id = data.id;
     this.players.self.online = true;
-    
 }; //client_onconnected
 
 // This is where clients parse messages from the server. If there's
@@ -180,22 +177,107 @@ client_onnetmessage = function(data) {
             alert('You did not enter an ID'); 
             window.location.replace('http://nodejs.org'); break;
         case 'h' : //host a game requested
-            game.client_onhostgame(); break;
+            client_onhostgame(); break;
         case 'j' : //join a game requested
-            game.client_onjoingame(commanddata); break;
+            client_onjoingame(); break;
         case 'n' : //ready a game requested
-            game.client_newgame(commanddata); break;
+            client_newgame(); break;
         case 'e' : //end game requested
-            game.client_ondisconnect(commanddata); break;
+            client_ondisconnect(); break;
         case 'a' : // other player changed angle
             game.players.other.angle = commanddata; break;
-            
+            game.players.other.draw();
         } //subcommand
         
         break; //'s'
-    } //command
+    } 
+}; 
+
+client_onjoingame = function() {
+    //We are not the host
+    game.players.self.host = false;
+
+    //Set colors once and for all.
+    game.players.other.color = '#2288cc';
+    game.players.other.info_color = '#2288cc';
+    game.players.self.color = '#cc0000';
+    game.players.self.info_color = '#cc0000';
+
+    //Make sure the positions match servers and other clients
+    game.client_reset_positions();
+
+}; //client_onjoingame
+
+// This function is triggered in a client when they first join and start a new game
+client_onhostgame = function() {
+    //Set the flag that we are hosting, this helps us position respawns correctly
+    game.players.self.host = true;
+
+    //Update tags below players to display state
+    game.players.self.state = 'waiting for other player to join';
+    game.players.other.state = 'not-connected';
+
+    // Set their colors once and for all.
+    game.players.self.color = '#2288cc';
+    game.players.self.info_color = '#2288cc';
+    game.players.other.color = '#cc0000';
+    game.players.other.info_color = '#cc0000';
+
+    //Make sure we start in the correct place as the host.
+    game.client_reset_positions();
+}; //client_onhostgame
+
+
+// Restarts things on the client side. Necessary for iterated games.
+client_newgame = function() {
+    if (game.games_remaining == 0) {
+        // Redirect to exit survey
+	// var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
+        var URL = 'game_over.html';
+        URL += '?id=' + game.players.self.id;
+        window.location.replace(URL);
+    } else {
+        // Decrement number of games remaining
+        game.games_remaining -= 1;
+    }
+
+    var player_host = game.players.self.host ?  game.players.self : game.players.other;
+    var player_client = game.players.self.host ?  game.players.other : game.players.self;
+
+    // Reset angles
+    player_host.angle = player_host.start_angle = 90;
+    player_client.angle = player_client.start_angle = 270;
+
+    //Update their destinations
+    player_host.destination = null;
+    player_client.destination = null;
+
+    // They SHOULD see the targets information
+    game.players.self.targets_enabled = true;
+    game.players.other.targets_enabled = true;
+
+    // Initiate countdown (with timeouts)
+    if (game.condition == 'dynamic')
+        client_countdown();
+
+    // Set text beneath player
+    game.players.self.state = 'YOU';
+    game.players.other.state = '';
+}; 
+
+client_countdown = function() {
+    game.players.self.message = '          Begin in 3...';
+    setTimeout(function(){game.players.self.message = '          Begin in 2...';}, 1000);
+    setTimeout(function(){game.players.self.message = '          Begin in 1...';}, 2000);
+
+    // At end of countdown, say "GO" and start using their real angle
+    setTimeout(function(){
+        game.players.self.message = '               GO';
+    }, 3000);
     
-}; //client_onnetmessage
+    // Remove message text
+    setTimeout(function(){game.players.self.message = '';}, 4000);
+}
 
 
 // This function tells the server where the client clicked so
