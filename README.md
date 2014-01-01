@@ -22,11 +22,12 @@ in one tab of your browser. You should see an avatar in a waiting room. To conn
 ```
 http://localhost:8000/index.html?id=1001&condition=dynamic 
 ```
+To see the other (ballistic) version of the experiment, just change "dynamic" to "ballistic" in the following two URLs.
 
 Putting experiment on web server
 ================================
 
-To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server. This requires one change to the code.
+To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server. To link clients to the experiment, replace "localhost" in the links given above with your web server's name.
 
 Integrating with MySQL
 ======================
