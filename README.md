@@ -1,5 +1,5 @@
-Local demo from scratch
-=======================
+Local demo (from scratch)
+=========================
 
 1. Git is a popular version control and source code management system. If you're new to git, you'll need to install the latest version by following the link for [Mac](https://code.google.com/p/git-osx-installer/downloads/list) or [Windows](https://code.google.com/p/msysgit/downloads/list?q=full+installer+official+git) and downloading the first option in the list. On Mac, this will give you a set of command-line tools (restart the terminal if the git command is still not found after installation). On Windows it will give you a shell to type commands into. For Linux users, more information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
 
@@ -26,7 +26,7 @@ http://localhost:8000/index.html?id=1001&condition=dynamic
 Putting experiment on web server
 ================================
 
-To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server. This requires one change to the code.
+To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server. This requires one change to the code.
 
 Integrating with MySQL
 ======================
