@@ -10,19 +10,19 @@ Local demo (from scratch)
 4. Navigate into the repository you created using the ```cd``` Unix command. You should see a file called package.json, which contains the dependencies. To install these dependencies, enter ```npm install``` at the command line. This may take a few minutes.
 
 5. Finally, to run the experiment, enter ```node app.js``` at the command line. You should expect to see the following message:
-```
-info  - socket.io started
-    :: Express :: Listening on port 8000
-```
-This means that you've successfully created a 'server' that can be accessed by copying and pasting 
-```
-http://localhost:8000/index.html?id=1000&condition=dynamic 
-```
-in one tab of your browser. You should see an avatar in a waiting room. To connect the other player in another tab for test purposes, open a new tab and use this URL with a different id:
-```
-http://localhost:8000/index.html?id=1001&condition=dynamic 
-```
-To see the other (staged) version of the experiment, just change "dynamic" to "ballistic" in the URL query string. Also note that if no id is provided, a unique id will be randomly generated.
+   ```
+   info  - socket.io started
+       :: Express :: Listening on port 8000
+   ```
+   This means that you've successfully created a 'server' that can be accessed by copying and pasting 
+   ```
+   http://localhost:8000/index.html?id=1000&condition=dynamic 
+   ```
+   in one tab of your browser. You should see an avatar in a waiting room. To connect the other player in another tab for test purposes, open a new tab and use this URL with a different id:
+   ```
+   http://localhost:8000/index.html?id=1001&condition=dynamic 
+   ```
+   To see the other (staged) version of the experiment, just change "dynamic" to "ballistic" in the URL query string. Also note that if no id is provided, a unique id will be randomly generated.
 
 Putting experiment on web server
 ================================
