@@ -1,4 +1,5 @@
-/*  Copyright (c) 2012 Sven "FuzzYspo0N" Bergström, 2013 Robert XD Hawkins
+/*  Copyright (c) 2012 Sven "FuzzYspo0N" Bergström, 
+                  2013 Robert XD Hawkins
     
     written by : http://underscorediscovery.com
     written for : http://buildnewgames.com/real-time-multiplayer/
@@ -18,41 +19,29 @@
 //requestAnimationFrame polyfill by Erik Möller
 //fixes from Paul Irish and Tino Zijdel
 
-// No need to touch this top part, it's what makes the animation work
-var frame_time = 60/1000; // run the local game at 16ms/ 60hz
-if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 22hz
+// The main game class. This gets created on both server and
+// client. Server creates one for each game that is hosted, and client
+// creates one for itself to play the game. When you set a variable,
+// remember that it's only set in that instance.
 
-( function () {
-
-    var lastTime = 0;
-    var vendors = [ 'ms', 'moz', 'webkit', 'o' ];
-
-    for ( var x = 0; x < vendors.length && !window.requestAnimationFrame; ++ x ) {
-        window.requestAnimationFrame = window[ vendors[ x ] + 'RequestAnimationFrame' ];
-        window.cancelAnimationFrame = window[ vendors[ x ] + 'CancelAnimationFrame' ] || window[ vendors[ x ] + 'CancelRequestAnimationFrame' ];
-    }
-
-    if ( !window.requestAnimationFrame ) {
-        window.requestAnimationFrame = function ( callback, element ) {
-            var currTime = Date.now(), timeToCall = Math.max( 0, frame_time - ( currTime - lastTime ) );
-            var id = window.setTimeout( function() { callback( currTime + timeToCall ); }, timeToCall );
-            lastTime = currTime + timeToCall;
-            return id;
-        };
-    }
-
-    if ( !window.cancelAnimationFrame ) {
-        window.cancelAnimationFrame = function ( id ) { clearTimeout( id ); };
-    }
-}() );
-
-//The main game class. This gets created on
-//both server and client. Server creates one for
-//each game that is hosted, and client creates one
-//for itself to play the game. When you set a variable,
-//remember that it's only set in that instance 
 
 var game_core = function(game_instance){
+
+    // Define some variables specific to our game to avoid
+    // 'magic numbers' elsewhere
+    this.left_player_start_angle = 90;
+    this.right_player_start_angle = 270;
+    this.left_player_start_pos = { x:180, y:240 }
+    this.right_player_start_pos = { x:540, y:240 }
+    this.left_player_color = '#2288cc';
+    this.right_player_color = '#cc0000';
+    this.big_payoff = 4
+    this.little_payoff = 1
+
+    // Create targets and assign fixed position
+    this.targets = {
+        top :    new target({x : 360, y : 120}),
+	    bottom : new target({x : 360, y : 360})};                  
 
     //Store the instance, if any (passed from game.server.js)
     this.instance = game_instance;
@@ -61,34 +50,25 @@ var game_core = function(game_instance){
     this.server = this.instance !== undefined;
 
     //Store a flag if a newgame has been initiated.
-    //Used to prevent the loop from continuing to start newgames during timeout
+    //Used to prevent the loop from continuing to start newgames during timeout.
     this.newgame_initiated_flag = false;
 
-    //Used in collision etc.
-    this.world = {
-	width : 720,
-	height : 480
-    };
-    
-    // Create targets and assign fixed position
-    this.targets = {
-	top : new target({x : 360, y : 120}),
-	bottom : new target({x : 360, y : 360})
-    };
+    //Dimensions of world -- Used in collision detection, etc.
+    this.world = {width : 720, height : 480};    
 
-    //We create a player set, passing them
-    //the game that is running them, as well
+    //We create a player set, passing them the game that is running
+    //them, as well.
+
     if(this.server) {
-	this.players = {
-	    self : new game_player(this,this.instance.player_host),
-	    other : new game_player(this,this.instance.player_client)
-	};
-	this.game_clock = 0;
+        var m = require('./drawing.js')
+	    this.players = {
+	        self : new game_player(this,this.instance.player_host),
+	        other : new game_player(this,this.instance.player_client)};
+	    this.game_clock = 0;
     } else {
-	this.players = {
-	    self : new game_player(this),
-	    other : new game_player(this)
-	};
+	    this.players = {
+	        self : new game_player(this),
+	        other : new game_player(this)};
     }
     
     //The speed at which the clients move (e.g. 10px/tick)
@@ -117,54 +97,10 @@ var game_core = function(game_instance){
     this.physics_interval_id = this.create_physics_simulation();
 }; 
 
-//server side we set the 'game_core' class to a global type, so that
-//it can use it anywhere.
-if( 'undefined' != typeof global ) {
-    module.exports = global.game_core = game_core;
-}
-
-/*
-    Helper functions for the game code
-
-        Here we have some common maths and game related code to make
-        working with 2d vectors easy, as well as some helpers for
-        rounding numbers to fixed point.
-*/
-
-// (4.22208334636).fixed(n) will return fixed point value to n places, default n = 3
-Number.prototype.fixed = function(n) { n = n || 3; return parseFloat(this.toFixed(n)); };
-
-// Takes two location objects and computes the distance between them
-game_core.prototype.distance_between = function(obj1, obj2) {
-    x1 = obj1.x;
-    x2 = obj2.x;
-    y1 = obj1.y;
-    y2 = obj2.y;
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-};
-
-//copies a 2d vector like object from one to another
-game_core.prototype.pos = function(a) { return {x:a.x,y:a.y}; };
-
-//Add a 2d vector with another one and return the resulting vector
-game_core.prototype.v_add = function(a,b) { return { x:(a.x+b.x).fixed(), y:(a.y+b.y).fixed() }; };
-
-//For the server, we need to cancel the setTimeout that the polyfill creates
-game_core.prototype.stop_update = function() {  
-    // Stop old game from animating anymore
-    window.cancelAnimationFrame( this.updateid );  
-
-    // Stop loop still running from old game (if someone is still left,
-    // game_server.endGame will start a new game for them).
-    clearInterval(this.physics_interval_id);
-};
-
-/*
-    The player class
+/* The player class
         A simple class to maintain state of a player on screen,
         as well as to draw that state when required.
 */
-
 var game_player = function( game_instance, player_instance ) {
     //Store the instance, if any
     this.instance = player_instance;
@@ -189,27 +125,22 @@ var game_player = function( game_instance, player_instance ) {
 
     //The world bounds we are confined to
     this.pos_limits = {
-	x_min: this.size.hx,
-	x_max: this.game.world.width - this.size.hx,
-	y_min: this.size.hy,
-	y_max: this.game.world.height - this.size.hy
+	    x_min: this.size.hx,
+	    x_max: this.game.world.width - this.size.hx,
+	    y_min: this.size.hy,
+	    y_max: this.game.world.height - this.size.hy
     };
 
-    //The 'host' of a game gets created with a player instance since
-    //the server already knows who they are. If the server starts a game
-    //with only a host, the other player is set up in the 'else' below
-    if(player_instance) {
-	this.pos = { x:180, y:240 };
-	this.color = '#2288cc';  // COLOR OF host
-	this.angle = 90;
-	// start_angle is a way to prevent players from revealing true angle
-	// during countdown...
-	this.start_angle = 90;
-    } else {
-	this.pos = { x:540, y:240 };
-	this.color = '#CD0000'; // COLOR of client
-	this.angle = 90;
-	this.start_angle = 90;
+    //For client instances, we'll set up these variables in client_onhostgame
+    // and client_onjoingame
+    if(player_instance) { // Host on left
+	    this.pos = this.game.left_player_start_pos;
+	    this.color = this.game.left_player_color;
+	    this.angle = this.start_angle = this.game.left_player_start_angle;
+    } else {             // other on right
+	    this.pos = this.game.right_player_start_pos;
+	    this.color = this.game.right_player_color;
+	    this.angle = this.start_angle = this.game.right_player_start_angle;
     }    
 }; 
 
@@ -223,148 +154,12 @@ var target = function(location) {
     this.color = 'white';
 };
 
-// Draw players as triangles using HTML5 canvas
-game_player.prototype.draw = function(){
-    game.ctx.font = "10pt Helvetica";
+//server side we set the 'game_core' class to a global type, so that
+//it can use it in other files
+if('undefined' != typeof global) {
+    module.exports = global.game_core = game_core;
+}
 
-    // Draw avatar as triangle
-    var v = [[0,-8],[-5,8],[5,8]];
-    game.ctx.save();
-    game.ctx.translate(this.pos.x, this.pos.y);
-    // draw_enabled is set to false during the countdown, so that
-    // players can set their destinations but won't turn to face them.
-    // As soon as the countdown is over, it's set to true and they
-    // immediately start using that new angle
-    if (this.game.draw_enabled) {
-	    game.ctx.rotate((this.angle * Math.PI) / 180);
-    } else {
-	    game.ctx.rotate((this.start_angle * Math.PI) / 180);
-    }
-    // This draws the triangle
-    game.ctx.fillStyle = this.color;
-    game.ctx.strokeStyle = this.color;
-    game.ctx.beginPath();
-    game.ctx.moveTo(v[0][0],v[0][1]);
-    game.ctx.lineTo(v[1][0],v[1][1]);
-    game.ctx.lineTo(v[2][0],v[2][1]);
-    game.ctx.closePath();
-    game.ctx.stroke();
-    game.ctx.fill();
-
-    game.ctx.beginPath();
-    game.ctx.restore();
-    
-    // Draw destination as an 'x' if it exists
-    if (this.destination) {
-	    game.ctx.strokeStyle = this.color;
-	    game.ctx.beginPath();
-	    game.ctx.moveTo(this.destination.x - 5, this.destination.y - 5);
-	    game.ctx.lineTo(this.destination.x + 5, this.destination.y + 5);
-
-	    game.ctx.moveTo(this.destination.x + 5, this.destination.y - 5);
-	    game.ctx.lineTo(this.destination.x - 5, this.destination.y + 5);
-	    game.ctx.stroke();
-    }
-
-    //Draw tag underneath players
-    game.ctx.fillStyle = this.info_color;
-    game.ctx.fillText(this.state, this.pos.x+10, this.pos.y + 20); 
-
-    // Draw message in center (for countdown, e.g.)
-    game.ctx.fillStyle = 'white';
-    game.ctx.fillText(this.message, 290, 240);
-
-    // Represent speeds in corner as a sort of bar graph (to visualize the effect of noise)
-    game.ctx.fillText("Your current speed: ", 5, 15);
-    game.ctx.fillText("Other's current speed: ", 5, 40);
-    game.ctx.beginPath();
-    game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-
-    // Light gray vertical line as base
-    game.ctx.moveTo(145, 0);
-    game.ctx.lineTo(145, 45);
-    game.ctx.stroke();
-
-    // Self line for speed counter
-    game.ctx.beginPath();
-    game.ctx.moveTo(145, 12);
-    if (this.game.players.self.curr_distance_moved == 0) {
-	    game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-	    game.ctx.lineTo(145 + 30, 12);
-	    game.ctx.stroke();
-    } else {
-	    game.ctx.lineWidth = 15;
-	    game.ctx.strokeStyle = 'white';
-	    game.ctx.lineTo(145 + 3*this.game.players.self.curr_distance_moved.fixed(2), 12);
-	    game.ctx.stroke();
-	    game.ctx.lineWidth = 1;
-    }
-
-    // Other line...
-    game.ctx.beginPath();
-    game.ctx.moveTo(145, 37);
-    if(this.game.players.other.curr_distance_moved == 0) {
-	    game.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-	    game.ctx.lineTo(145 + 30, 37);
-	    game.ctx.stroke();
-    } else {
-	    game.ctx.lineWidth = 15;
-	    game.ctx.strokeStyle = 'white';
-	    game.ctx.lineTo(145 + 3*this.game.players.other.curr_distance_moved.fixed(2), 37);
-	    game.ctx.stroke();
-	    game.ctx.lineWidth = 1;
-    }
-    game.ctx.stroke();
-
-}; //game_player.draw
-
-// this.targets_enabled is set to true when both people have joined.
-// Uses HTML5 canvas
-
-game_player.prototype.draw_targets = function() {
-    // Draw targets
-    if (this.targets_enabled) {
-	    var centerX1 = this.game.targets.top.location.x;
-	    var centerY1 = this.game.targets.top.location.y;
-	    var centerX2 = this.game.targets.bottom.location.x;
-	    var centerY2 = this.game.targets.bottom.location.y;
-	    var radius = this.game.targets.top.radius;
-	    var outer_radius = this.game.targets.top.outer_radius;
-
-	    // Filled in top target
-	    game.ctx.beginPath();
-	    game.ctx.arc(centerX1, centerY1, radius, 0, 2 * Math.PI, false);
-	    game.ctx.fillStyle = this.game.targets.top.color;	
-	    game.ctx.fill();
-	    game.ctx.lineWidth = 1;
-	    game.ctx.strokeStyle = 'gray';
-	    game.ctx.stroke();
-
-	    // Outer line around top target
-	    game.ctx.beginPath();
-	    game.ctx.arc(centerX1, centerY1, outer_radius, 0, 2 * Math.PI, false);
-	    game.ctx.stroke();
-	    
-	    // Filled in bottom target
-	    game.ctx.beginPath();
-	    game.ctx.arc(centerX2, centerY2, radius, 0, 2 * Math.PI, false);
-	    game.ctx.fillStyle = this.game.targets.bottom.color;
-	    game.ctx.fill();
-	    game.ctx.stroke();
-
-	    // Outer line around bottom target
-	    game.ctx.beginPath();
-	    game.ctx.arc(centerX2, centerY2, outer_radius, 0, 2 * Math.PI, false);
-	    game.ctx.stroke();
-	    
-	    // Draw tag next to targets (for payoff info)
-	    game.ctx.fillStyle = 'white';
-	    game.ctx.font = "15pt Helvetica";
-	    targets = this.game.targets;
-	    game.ctx.fillText("$0.0" + targets.top.payoff, targets.top.location.x - 27, targets.top.location.y - 50 );
-	    game.ctx.fillText("$0.0" + targets.bottom.payoff, targets.bottom.location.x - 27, targets.bottom.location.y + 65);
-    }
-}; // draw_targets
 
 /*
 
@@ -394,20 +189,20 @@ game_core.prototype.client_update = function() {
     this.ctx.clearRect(0,0,720,480);
 
     //draw help/information if required
-    this.client_draw_info("Instructions: Click where you want to go");
+    draw_info(this, "Instructions: Click where you want to go");
 
     //Draw targets first, so in background
-    this.players.self.draw_targets();
+    draw_targets(this, this.players.self);
 
     //Draw opponent next
-    this.players.other.draw();
+    draw_player(this, this.players.other);
 
     // Draw points scoreboard 
     this.ctx.fillText("Money earned: $" + (this.players.self.points_earned / 100).fixed(2), 300, 15);
     this.ctx.fillText("Games remaining: " + this.games_remaining, 580, 15)
 
     //And then we draw ourself so we're always in front
-    this.players.self.draw();
+    draw_player(this, this.players.self);
 };
 
 // Notifies clients of changes on the server side. Server totally
@@ -436,35 +231,7 @@ game_core.prototype.server_update = function(){
     
     //Send the snapshot to the 'client' player
     if(this.players.other.instance) 
-        this.players.other.instance.emit( 'onserverupdate', this.laststate );
-    
-};
-
-/*
-    Shared between server and client.
-    Prevents people from leaving the arena
-*/
-
-game_core.prototype.check_collision = function( item ) {
-    //Left wall.
-    if(item.pos.x <= item.pos_limits.x_min)
-        item.pos.x = item.pos_limits.x_min;
- 
-    //Right wall
-    if(item.pos.x >= item.pos_limits.x_max )
-        item.pos.x = item.pos_limits.x_max;
-       
-    //Roof wall.
-    if(item.pos.y <= item.pos_limits.y_min) 
-        item.pos.y = item.pos_limits.y_min;
-    
-    //Floor wall
-    if(item.pos.y >= item.pos_limits.y_max ) 
-        item.pos.y = item.pos_limits.y_max;
-
-    //Fixed point helps be more deterministic
-    item.pos.x = item.pos.x.fixed(4);
-    item.pos.y = item.pos.y.fixed(4);
+        this.players.other.instance.emit( 'onserverupdate', this.laststate );    
 };
 
 /*
@@ -678,19 +445,6 @@ game_core.prototype.check_target_reached = function(main_target, other_target,pl
   
 */
 
-// Little helper function to draw instructions at the bottom in a nice style
-game_core.prototype.client_draw_info = function(info) {
-    
-    //Draw information shared by both players
-    this.ctx.font = "8pt Helvetica";
-    this.ctx.fillStyle = 'rgba(255,255,255,1)';
-    this.ctx.fillText(info, 10 , 465); 
-    
-    //Reset the style back to full white.
-    this.ctx.fillStyle = 'rgba(255,255,255,1)';
-    
-}; 
-
 // Every second, we print out a bunch of information to a file in a
 // "data" directory. We keep EVERYTHING so that we
 // can analyze the data to an arbitrary exactness later on.
@@ -751,8 +505,8 @@ game_core.prototype.server_reset_positions = function() {
     player_host.pos = {x : 540, y:240};
     player_client.pos = {x : 180, y:240};
 
-    player_host.angle = player_host.start_angle = 270;
-    player_client.angle = player_client.start_angle = 90;
+    player_host.angle = player_host.start_angle;
+    player_client.angle = player_client.start_angle;
 
 }; //game_core.server_reset_positions
 
@@ -770,34 +524,21 @@ game_core.prototype.server_reset_targets = function() {
     var r = Math.floor(Math.random() * 2);
 
     if (r == 0) {
-    this.targets.top.payoff = 1;
-    this.targets.bottom.payoff = 4;
-    this.best_target_string = 'bottom';
+        this.targets.top.payoff = this.little_payoff;
+        this.targets.bottom.payoff = this.big_payoff;
+        this.best_target_string = 'bottom';
     } else {
-    this.targets.top.payoff = 4;
-    this.targets.bottom.payoff = 1;
-    this.best_target_string = 'top';
+        this.targets.top.payoff = this.big_payoff;
+        this.targets.bottom.payoff = this.little_payoff;
+        this.best_target_string = 'top';
     }
 }; //game_core.server_reset_targets
 
-game_core.prototype.client_reset_positions = function() {
-
-    var player_host = this.players.self.host ?  this.players.self : this.players.other;
-    var player_client = this.players.self.host ?  this.players.other : this.players.self;
-
-    //Host always spawns on the left facing inward.
-    player_host.pos = { x:180,y:240 }; 
-    player_client.pos = { x:540, y:240 };
-    player_host.angle = 90;
-    player_client.angle = 270;
-
-}; //game_core.client_reset_positions
 
 // This is a really important function -- it gets called when a round
 // has been completed, and updates the database with how much money
 // people have made so far. This way, if somebody gets disconnected or
 // something, we'll still know what to pay them.
-
 game_core.prototype.server_newgame = function() {
     // Update number of games remaining
     this.games_remaining -= 1;
@@ -849,6 +590,33 @@ game_core.prototype.server_newgame = function() {
     } 
 };
 
+/*
+  The following code should NOT need to be changed
+*/
+
+//Prevents people from leaving the arena
+game_core.prototype.check_collision = function( item ) {
+    //Left wall.
+    if(item.pos.x <= item.pos_limits.x_min)
+        item.pos.x = item.pos_limits.x_min;
+ 
+    //Right wall
+    if(item.pos.x >= item.pos_limits.x_max )
+        item.pos.x = item.pos_limits.x_max;
+       
+    //Roof wall.
+    if(item.pos.y <= item.pos_limits.y_min) 
+        item.pos.y = item.pos_limits.y_min;
+    
+    //Floor wall
+    if(item.pos.y >= item.pos_limits.y_max ) 
+        item.pos.y = item.pos_limits.y_max;
+
+    //Fixed point helps be more deterministic
+    item.pos.x = item.pos.x.fixed(4);
+    item.pos.y = item.pos.y.fixed(4);
+};
+
 // Just in case we want to draw from Gaussian to get noise on movement...
 function NormalDistribution(sigma, mu) {
     return new Object({
@@ -872,3 +640,66 @@ function NormalDistribution(sigma, mu) {
         }
     });
 }
+
+/* Helper functions for the game code:
+   Here we have some common maths and game related code to make
+   working with 2d vectors easy, as well as some helpers for
+   rounding numbers to fixed point.
+*/
+
+// (4.22208334636).fixed(n) will return fixed point value to n places, default n = 3
+Number.prototype.fixed = function(n) { n = n || 3; return parseFloat(this.toFixed(n)); };
+
+// Takes two location objects and computes the distance between them
+game_core.prototype.distance_between = function(obj1, obj2) {
+    x1 = obj1.x;
+    x2 = obj2.x;
+    y1 = obj1.y;
+    y2 = obj2.y;
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+};
+
+//copies a 2d vector like object from one to another
+game_core.prototype.pos = function(a) { return {x:a.x,y:a.y}; };
+
+//Add a 2d vector with another one and return the resulting vector
+game_core.prototype.v_add = function(a,b) { return { x:(a.x+b.x).fixed(), y:(a.y+b.y).fixed() }; };
+
+//For the server, we need to cancel the setTimeout that the polyfill creates
+game_core.prototype.stop_update = function() {  
+
+    // Stop old game from animating anymore
+    window.cancelAnimationFrame( this.updateid );  
+
+    // Stop loop still running from old game (if someone is still left,
+    // game_server.endGame will start a new game for them).
+    clearInterval(this.physics_interval_id);
+};
+
+// The remaining code runs the update animations
+var frame_time = 60/1000; // run the local game at 16ms/ 60hz
+if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 22hz
+
+( function () {
+
+    var lastTime = 0;
+    var vendors = [ 'ms', 'moz', 'webkit', 'o' ];
+
+    for ( var x = 0; x < vendors.length && !window.requestAnimationFrame; ++ x ) {
+        window.requestAnimationFrame = window[ vendors[ x ] + 'RequestAnimationFrame' ];
+        window.cancelAnimationFrame = window[ vendors[ x ] + 'CancelAnimationFrame' ] || window[ vendors[ x ] + 'CancelRequestAnimationFrame' ];
+    }
+
+    if ( !window.requestAnimationFrame ) {
+        window.requestAnimationFrame = function ( callback, element ) {
+            var currTime = Date.now(), timeToCall = Math.max( 0, frame_time - ( currTime - lastTime ) );
+            var id = window.setTimeout( function() { callback( currTime + timeToCall ); }, timeToCall );
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+    }
+
+    if ( !window.cancelAnimationFrame ) {
+        window.cancelAnimationFrame = function ( id ) { clearTimeout( id ); };
+    }
+}() );

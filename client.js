@@ -1,4 +1,5 @@
-/*  Copyright (c) 2012 Sven "FuzzYspo0N" Bergström, 2013 Robert XD Hawkins
+/*  Copyright (c) 2012 Sven "FuzzYspo0N" Bergström, 
+                  2013 Robert XD Hawkins
     
     written by : http://underscorediscovery.com
     written for : http://buildnewgames.com/real-time-multiplayer/
@@ -8,79 +9,55 @@
     MIT Licensed.
 */
 
-//A window global for our game root variable.
-var game = {};
+/* 
+   THE FOLLOWING FUNCTIONS MAY NEED TO BE CHANGED
+*/
 
-//When loading, we store references to our
-//drawing canvases, and initiate a game instance.
-window.onload = function(){
+// This function is called whenever a player clicks. 
+// Input:
+//   * game = the current game object for extracting current state
+//   * newX = the X coordinate of the player's click
+//   * newY = the Y coordinate of the player's click
+
+client_on_click = function(game, newX, newY ) {
+    // Auto-correcting input, but only between rounds
+    if (game.condition == 'ballistic' && !game.draw_enabled) {
+        if (game.distance_between({x : newX, y : newY},
+                                  game.targets.top.location) 
+            < game.targets.top.outer_radius) {
+            newX = game.targets.top.location.x;
+            newY = game.targets.top.location.y;
+        } else if (game.distance_between({x : newX, y: newY},
+                                         game.targets.bottom.location) 
+                   < game.targets.bottom.outer_radius) {
+            newX = game.targets.bottom.location.x;
+            newY = game.targets.bottom.location.y;
+        }
+    }
     
-    //Create our game client instance.
-    game = new game_core();
+    oldX = game.players.self.pos.x;
+    oldY = game.players.self.pos.y;
+    dx = newX - oldX;
+    dy = newY - oldY;
     
-    //Connect to the socket.io server!
-    client_connect_to_server(game);
-    
-    game.players.other.color = '#212121';
-    game.players.self.color = '#212121';
-    
-    //Fetch the viewport
-    game.viewport = document.getElementById('viewport');
-    
-    //Adjust their size
-    game.viewport.width = game.world.width;
-    game.viewport.height = game.world.height;
-    
-    //Assign click handler ONCE, with the associated data.
-    $('#viewport').click(function(e){
-        console.log("click");
-        e.preventDefault();
-        // e.pageX is relative to whole page -- we want
-        // relative to GAME WORLD (i.e. viewport)
-        var offset = $(this).offset(); 
-        var relX = e.pageX - offset.left;
-        var relY = e.pageY - offset.top;
+    // Complicated logic. If you're in the dynamic condition, your clicks will
+    // ALWAYS register. If you're in the ballistic condition, they'll only register
+    // if you're in the pre- (or between-)game period where nothing's being written.
+    if((game.condition == "ballistic" && !game.good2write) || 
+       game.condition == "dynamic") {
+        game.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
+        game.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
         
-        // The things we care about are not yet defined, so we
-        // just pass it off to another function as a callback
-        client_on_click(game, relX, relY);
-    }); 
-
-    //Fetch the rendering contexts
-    game.ctx = game.viewport.getContext('2d');
-
-    //Set the draw style for the font
-    game.ctx.font = '11px "Helvetica"';
-
-    //Finally, start the loop
-    game.update();
-
-}; //window.onload
-
-
-// Associates callback functions corresponding to different socket messages
-client_connect_to_server = function(game) {
-    
-    //Store a local reference to our connection to the server
-    game.socket = io.connect();
-
-    //When we connect, we are not 'connected' until we have a server id
-    //and are placed in a game by the server. The server sends us a message for that.
-    game.socket.on('connect', function(){
-        game.players.self.state = 'connecting';
-    }.bind(game));
-
-    //Sent when we are disconnected (network, server down, etc)
-    game.socket.on('disconnect', client_ondisconnect.bind(game));
-    //Sent each tick of the server simulation. This is our authoritive update
-    game.socket.on('onserverupdate', client_onserverupdate_recieved.bind(game));
-    //Handle when we connect to the server, showing state and storing id's.
-    game.socket.on('onconnected', client_onconnected.bind(game));
-    //On message from the server, we parse the commands and send it to the handlers
-    game.socket.on('message', client_onnetmessage.bind(game));
+        // Send game information to server so that other player (and server) 
+        // can update information
+        info_packet = ("c." + game.players.self.angle + 
+                       "."  + game.players.self.destination.x +
+                       "."  + game.players.self.destination.y);
+        game.socket.send(info_packet);
+    } 
 }; 
 
-// Function that gets called client-side when someone 
+// Function that gets called client-side when someone disconnects
 client_ondisconnect = function(data) {
     // Everything goes offline!
     game.players.self.info_color = 'rgba(255,255,255,0.1)';
@@ -98,7 +75,8 @@ client_ondisconnect = function(data) {
         URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
     } else {
-        // Otherwise, redirect them to a "we're sorry, the other player disconnected" page
+        // Otherwise, redirect them to a "we're sorry, the other
+        // player disconnected" page
         URL = './disconnected.html'
         URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
@@ -106,24 +84,26 @@ client_ondisconnect = function(data) {
 };
 
 /* 
-This function is at the center of the problem of networking --
-everybody has different INSTANCES of the game. The server has its own,
-and both players have theirs too. This can get confusing because the
-server will update a variable, and the variable of the same name won't
-change in the clients (because they have a different instance of
-it). To make sure everybody's on the same page, the server regularly
-sends news about its variables to the clients so that they can update
-their variables to reflect changes.
+Note: If you add some new variable to your game that must be shared
+  across server and client, add it both here and the server_update
+  function in game.core.js to make sure it syncs 
+
+Explanation: This function is at the center of the problem of
+  networking -- everybody has different INSTANCES of the game. The
+  server has its own, and both players have theirs too. This can get
+  confusing because the server will update a variable, and the variable
+  of the same name won't change in the clients (because they have a
+  different instance of it). To make sure everybody's on the same page,
+  the server regularly sends news about its variables to the clients so
+  that they can update their variables to reflect changes.
 */
 client_onserverupdate_recieved = function(data){
-    //Lets clarify the information we have locally. One of the players is 'hosting' and
-    //the other is a joined in client, so we name these host and client for making sure
-    //the positions we get from the server are mapped onto the correct local sprites
-    var player_host = this.players.self.host ?  this.players.self : this.players.other;
-    var player_client = this.players.self.host ?  this.players.other : this.players.self;
-    var game_player = this.players.self;
+    var player_host  =this.players.self.host ? this.players.self : this.players.other;
+    var player_client=this.players.self.host ? this.players.other : this.players.self;
+    var game_player  =this.players.self;
         
-    // Update client versions of variables with data received from server
+    // Update client versions of variables with data received from
+    // server_update function in game.core.js
     if(data.hpos) 
         player_host.pos = this.pos(data.hpos); 
     if(data.cpos) 
@@ -140,19 +120,16 @@ client_onserverupdate_recieved = function(data){
     this.condition = data.cond;
     this.draw_enabled = data.de;
     this.good2write = data.g2w;
-}; //game_core.client_onserverupdate_recieved
+}; 
 
-client_onconnected = function(data) {
-    //The server responded that we are now in a game,
-    //this lets us store the information about ourselves    
-    this.players.self.id = data.id;
-    this.players.self.online = true;
-}; //client_onconnected
+// This is where clients parse socket.io messages from the server. If
+// you want to add another event (labeled 'x', say), just add another
+// case here, then call
 
-// This is where clients parse messages from the server. If there's
-// another message you need to receive, just add another case here. To
-// see the corresponding function where the server parses messages
-// from clients, look for "onMessage" in game.server.js.
+//          this.instance.player_host.send("s.x. <data>")
+
+// The corresponding function where the server parses messages from
+// clients, look for "onMessage" in game.server.js.
 client_onnetmessage = function(data) {
 
     var commands = data.split('.');
@@ -164,16 +141,15 @@ client_onnetmessage = function(data) {
     case 's': //server message
 
         switch(subcommand) {    
-            // Permanent Message
-        case 'p' :
+        case 'p' :// Permanent Message
             game.players.self.message = commanddata;
             break;
-        case 'm' : 
+        case 'm' :// Temporary Message
             game.players.self.message = commanddata;
             var local_game = game;
             setTimeout(function(){local_game.players.self.message = '';}, 1000);
             break;
-        case 'alert' : // Can't play...
+        case 'alert' : // Not in database, so you can't play...
             alert('You did not enter an ID'); 
             window.location.replace('http://nodejs.org'); break;
         case 'h' : //host a game requested
@@ -187,52 +163,15 @@ client_onnetmessage = function(data) {
         case 'a' : // other player changed angle
             game.players.other.angle = commanddata; break;
             game.players.other.draw();
-        } //subcommand
-        
-        break; //'s'
+        }        
+        break; 
     } 
 }; 
-
-client_onjoingame = function() {
-    //We are not the host
-    game.players.self.host = false;
-
-    //Set colors once and for all.
-    game.players.other.color = '#2288cc';
-    game.players.other.info_color = '#2288cc';
-    game.players.self.color = '#cc0000';
-    game.players.self.info_color = '#cc0000';
-
-    //Make sure the positions match servers and other clients
-    game.client_reset_positions();
-
-}; //client_onjoingame
-
-// This function is triggered in a client when they first join and start a new game
-client_onhostgame = function() {
-    //Set the flag that we are hosting, this helps us position respawns correctly
-    game.players.self.host = true;
-
-    //Update tags below players to display state
-    game.players.self.state = 'waiting for other player to join';
-    game.players.other.state = 'not-connected';
-
-    // Set their colors once and for all.
-    game.players.self.color = '#2288cc';
-    game.players.self.info_color = '#2288cc';
-    game.players.other.color = '#cc0000';
-    game.players.other.info_color = '#cc0000';
-
-    //Make sure we start in the correct place as the host.
-    game.client_reset_positions();
-}; //client_onhostgame
-
 
 // Restarts things on the client side. Necessary for iterated games.
 client_newgame = function() {
     if (game.games_remaining == 0) {
         // Redirect to exit survey
-	// var URL = 'http://perceptsconcepts.psych.indiana.edu/rts/survey';
         var URL = 'game_over.html';
         URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
@@ -245,8 +184,8 @@ client_newgame = function() {
     var player_client = game.players.self.host ?  game.players.other : game.players.self;
 
     // Reset angles
-    player_host.angle = player_host.start_angle = 90;
-    player_client.angle = player_client.start_angle = 270;
+    player_host.angle = game.left_player_start_angle;
+    player_client.angle = game.right_player_start_angle;
 
     //Update their destinations
     player_host.destination = null;
@@ -279,42 +218,126 @@ client_countdown = function() {
     setTimeout(function(){game.players.self.message = '';}, 4000);
 }
 
+/*
+  The following code should NOT need to be changed
+*/
 
-// This function tells the server where the client clicked so
-// that their destination and angle can be updated. 
-client_on_click = function(game, newX, newY ) {
-    // Auto-correcting input, but only between rounds
-    if (game.condition == 'ballistic' && !game.draw_enabled) {
-        if (game.distance_between({x : newX, y : newY},
-                                  game.targets.top.location) < game.targets.top.outer_radius) {
-            newX = game.targets.top.location.x;
-            newY = game.targets.top.location.y;
-        } else if (game.distance_between({x : newX, y: newY},
-                                         game.targets.bottom.location) < game.targets.bottom.outer_radius) {
-            newX = game.targets.bottom.location.x;
-            newY = game.targets.bottom.location.y;
-        }
-    }
-    
-    oldX = game.players.self.pos.x;
-    oldY = game.players.self.pos.y;
-    dx = newX - oldX;
-    dy = newY - oldY;
-    
-    // Complicated logic. If you're in the dynamic condition, your clicks will
-    // ALWAYS register. If you're in the ballistic condition, they'll only register
-    // if you're in the pre- (or between-)game period where nothing's being written.
-    if((game.condition == "ballistic" && !game.good2write) || 
-       game.condition == "dynamic") {
-        game.players.self.destination = {x : Math.round(newX), y : Math.round(newY)};
-        game.players.self.angle = Math.round((Math.atan2(dy,dx) * 180 / Math.PI) + 90);
-        
-        // Send game information to server so that other player (and server) 
-        // can update information
-        info_packet = ("c." + game.players.self.angle + 
-                       "."  + game.players.self.destination.x +
-                       "."  + game.players.self.destination.y);
-        game.socket.send(info_packet);
-    } //end the if statement for ballistic condition
-}; // client_on_click
+// A window global for our game root variable.
+var game = {};
 
+// When loading the page, we store references to our
+// drawing canvases, and initiate a game instance.
+window.onload = function(){
+    //Create our game client instance.
+    game = new game_core();
+    
+    //Connect to the socket.io server!
+    client_connect_to_server(game);
+    
+    //Fetch the viewport
+    game.viewport = document.getElementById('viewport');
+    
+    //Adjust its size
+    game.viewport.width = game.world.width;
+    game.viewport.height = game.world.height;
+    
+    // Assign click handler ONCE, with the associated data.
+    // Just sends click info to the client_on_click function,
+    // since the things we care about haven't been defined yet
+    $('#viewport').click(function(e){
+        e.preventDefault();
+        // e.pageX is relative to whole page -- we want
+        // relative to GAME WORLD (i.e. viewport)
+        var offset = $(this).offset(); 
+        var relX = e.pageX - offset.left;
+        var relY = e.pageY - offset.top;
+        client_on_click(game, relX, relY);
+    }); 
+
+    //Fetch the rendering contexts
+    game.ctx = game.viewport.getContext('2d');
+
+    //Set the draw style for the font
+    game.ctx.font = '11px "Helvetica"';
+
+    //Finally, start the loop
+    game.update();
+
+}; //window.onload
+
+// Associates callback functions corresponding to different socket messages
+client_connect_to_server = function(game) {
+    
+    //Store a local reference to our connection to the server
+    game.socket = io.connect();
+
+    //When we connect, we are not 'connected' until we have a server id
+    //and are placed in a game by the server. The server sends us a message for that.
+    game.socket.on('connect', function(){
+        game.players.self.state = 'connecting';
+    }.bind(game));
+
+    //Sent when we are disconnected (network, server down, etc)
+    game.socket.on('disconnect', client_ondisconnect.bind(game));
+    //Sent each tick of the server simulation. This is our authoritive update
+    game.socket.on('onserverupdate', client_onserverupdate_recieved.bind(game));
+    //Handle when we connect to the server, showing state and storing id's.
+    game.socket.on('onconnected', client_onconnected.bind(game));
+    //On message from the server, we parse the commands and send it to the handlers
+    game.socket.on('message', client_onnetmessage.bind(game));
+}; 
+
+client_onconnected = function(data) {
+    //The server responded that we are now in a game,
+    //this lets us store the information about ourselves    
+    this.players.self.id = data.id;
+    this.players.self.online = true;
+}; //client_onconnected
+
+client_reset_positions = function() {
+
+    var player_host  =game.players.self.host ? game.players.self : game.players.other;
+    var player_client=game.players.self.host ? game.players.other : game.players.self;
+
+    //Host always spawns on the left facing inward.
+    player_host.pos = game.left_player_start_pos; 
+    player_client.pos = game.right_player_start_pos;
+    player_host.angle = game.left_player_start_angle;
+    player_client.angle = game.right_player_start_angle;
+}; 
+
+client_onjoingame = function() {
+    //We are not the host
+    game.players.self.host = false;
+	game.players.other.pos = game.left_player_start_pos;
+	game.players.self.pos = game.right_player_start_pos;
+    game.players.other.start_angle = game.left_player_start_angle;
+    game.players.self.start_angle = game.right_player_start_angle;
+
+    //Set colors once and for all.
+    game.players.other.color = game.players.other.info_color = game.left_player_color;
+    game.players.self.color = game.players.self.info_color = game.right_player_color;
+
+    //Make sure the positions match servers and other clients
+    client_reset_positions();
+
+}; //client_onjoingame
+
+// This function is triggered in a client when they first join and start a new game
+client_onhostgame = function() {
+    //Set the flag that we are hosting, this helps us position respawns correctly
+    game.players.self.host = true;
+	game.players.self.pos = game.left_player_start_pos;
+	game.players.other.pos = game.right_player_start_pos;
+    game.players.self.start_angle = game.left_player_start_angle;
+    game.players.other.start_angle = game.right_player_start_angle;
+    game.players.self.color = game.players.self.info_color = game.left_player_color;
+    game.players.other.color = game.players.other.info_color = game.right_player_color;
+
+    //Update tags below players to display state
+    game.players.self.state = 'waiting for other player to join';
+    game.players.other.state = 'not-connected';
+
+    //Make sure we start in the correct place as the host.
+    client_reset_positions();
+}; //client_onhostgame

@@ -43,11 +43,11 @@ game_server.onMessage = function(client,message) {
 
     //Extract important variables
     if (client.game.player_host.userid == client.userid) {
-    var other_client = client.game.player_client;
-    var change_target = client.game.gamecore.players.self;
+        var other_client = client.game.player_client;
+        var change_target = client.game.gamecore.players.self;
     } else {
-    var other_client = client.game.player_host;
-    var change_target = client.game.gamecore.players.other;
+        var other_client = client.game.player_host;
+        var change_target = client.game.gamecore.players.other;
     }
 
     if(message_type == 'c') {    // Client clicked somewhere
@@ -88,10 +88,10 @@ game_server.createGame = function(player) {
     var id = UUID();
     //Create a new game instance
     var thegame = {
-    id : id,                    //generate a new id for the game
-    player_host:player,         //so we know who initiated the game
-    player_client:null,         //nobody else joined yet, since its new
-    player_count:1              //for simple checking of state
+        id : id,                    //generate a new id for the game
+        player_host:player,         //so we know who initiated the game
+        player_client:null,         //nobody else joined yet, since its new
+        player_count:1              //for simple checking of state
     };
 
     //Store it in the list of game
