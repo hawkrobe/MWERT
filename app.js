@@ -95,8 +95,6 @@ var initialize = function(query, client, id) {
     //Pass off to game.server.js code
     game_server.findGame(client);
     
-    game_server.use_db = use_db;
-
     // Now we want set up some callbacks to handle messages that clients will send.
     // We'll just pass messages off to the onMessage function for now.
     client.on('message', function(m) {

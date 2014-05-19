@@ -12,13 +12,13 @@
         game_server = module.exports = { games : {}, game_count:0 },
         UUID        = require('node-uuid'),
         fs          = require('fs'),
-        use_db      = false,
+        use_db      = true,
         verbose     = true;
 
-if (use_db) {
-    database        = require(__dirname + "/database"),
-    connection      = database.getConnection();
-}
+    if (use_db) {
+	database    = require(__dirname + "/database"),
+	connection  = database.getConnection();
+    }
 
 //Since we are sharing code with the browser, we
 //are going to include some values to handle that.
@@ -120,9 +120,11 @@ game_server.createGame = function(player) {
     thegame.gamecore.condition = player.condition;
 
     // Pass the database connection to the game
-    if (this.use_db) 
+    if (use_db) {
         thegame.gamecore.mysql_conn = connection;
-    
+	thegame.gamecore.use_db = use_db;
+    }
+
     //Start updating the game loop on the server
     thegame.gamecore.update();
 

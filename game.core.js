@@ -485,7 +485,8 @@ game_core.prototype.server_reset_targets = function() {
 // people have made so far. This way, if somebody gets disconnected or
 // something, we'll still know what to pay them.
 game_core.prototype.server_newgame = function() {
-    if (use_db) {
+    if (this.use_db) {
+	console.log("USING DB");
         var sql1 = 'UPDATE game_participant SET bonus_pay = ' + 
             (this.players.self.points_earned / 100).toFixed(2); 
         sql1 += ' WHERE workerId = "' + this.players.self.instance.userid + '"';
