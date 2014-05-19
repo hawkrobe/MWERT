@@ -9,22 +9,12 @@
     MIT Licensed.
 */
 
-//The main update loop runs on requestAnimationFrame,
-//Which falls back to a setTimeout loop on the server
-//Code below is from Three.js, and sourced from links below
-
-//http://paulirish.com/2011/requestanimationframe-for-smart-animating/
-//http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
-
-//requestAnimationFrame polyfill by Erik Möller
-//fixes from Paul Irish and Tino Zijdel
-
-// The main game class. This gets created on both server and
-// client. Server creates one for each game that is hosted, and client
-// creates one for itself to play the game. When you set a variable,
-// remember that it's only set in that instance.
-
-
+/*
+  The main game class. This gets created on both server and
+  client. Server creates one for each game that is hosted, and each
+  client creates one for itself to play the game. When you set a
+  variable, remember that it's only set in that instance.
+*/
 var game_core = function(game_instance){
 
     // Define some variables specific to our game to avoid
@@ -57,10 +47,10 @@ var game_core = function(game_instance){
     this.world = {width : 720, height : 480};    
 
     //We create a player set, passing them the game that is running
-    //them, as well.
-
+    //them, as well. Both the server and the clients need separate
+    //instances of both players, but the server has more information
+    //about who is who. Clients will be given this info later.
     if(this.server) {
-        var m = require('./drawing.js')
 	    this.players = {
 	        self : new game_player(this,this.instance.player_host),
 	        other : new game_player(this,this.instance.player_client)};
@@ -171,19 +161,6 @@ if('undefined' != typeof global) {
 
 */
 
-//Main update loop -- don't worry about it
-game_core.prototype.update = function() {
-    
-    //Update the game specifics
-    if(!this.server) 
-        this.client_update();
-    else 
-        this.server_update();
-
-    //schedule the next update
-    this.updateid = window.requestAnimationFrame( this.update.bind(this), this.viewport );
-}; //game_core.update
-
 game_core.prototype.client_update = function() {
     //Clear the screen area
     this.ctx.clearRect(0,0,720,480);
@@ -234,30 +211,6 @@ game_core.prototype.server_update = function(){
         this.players.other.instance.emit( 'onserverupdate', this.laststate );    
 };
 
-/*
-
- Server side functions
- 
-    These functions below are specific to the server side only,
-    and usually start with server_* to make things clearer.
-
-*/
-
-game_core.prototype.create_physics_simulation = function() {    
-    return setInterval(function(){
-        this.update_physics();
-        this.game_clock += 1;
-        if (this.good2write) {
-            this.writeData();
-        }
-    }.bind(this), this.tick_frequency);
-};
-
-game_core.prototype.update_physics = function() {
-    if(this.server) 
-	this.server_update_physics();
-};
-
 // This is called every 666ms and simulates the world state. This is
 // where we update positions and check whether targets have been reached.
 game_core.prototype.server_update_physics = function() {
@@ -287,7 +240,7 @@ game_core.prototype.server_update_physics = function() {
     if (this.noise) {
         var noise_sd = 4;
         var nd = new NormalDistribution(noise_sd,0); 
-    
+        
         // If a player isn't moving, no noise. Otherwise they'll wiggle in place.
         // Use !good2write as a proxy for the 'waiting room' state
         if (host_player.speed == 0 || !this.good2write) 
@@ -402,14 +355,15 @@ game_core.prototype.server_check_for_payoff = function(player1, player2, whoispl
             local_this.server_newgame();
         }, 1500);
     }
-}; //game_core.server_check_for_payoff
+}; 
 
+// Messy helper function for our specific game -- implements 'end-game' logic
 game_core.prototype.check_target_reached = function(main_target, other_target,player1,player2,whoisplayer1) {
     // If player1 reaches the top target before player2, reward them and
     // end the game
-    if (this.distance_between(player1.pos,main_target.location) < main_target.radius + 8
+    if (this.distance_between(player1.pos,main_target.location) < main_target.radius + player1.size.hy
         && !main_target.visited
-        && this.distance_between(player2.pos,main_target.location) > main_target.outer_radius + 8) {
+        && this.distance_between(player2.pos,main_target.location) > main_target.outer_radius + player2.size.hy) {
         main_target.visited = true;
         main_target.color = player1.color;
         player1.points_earned += main_target.payoff;
@@ -424,9 +378,9 @@ game_core.prototype.check_target_reached = function(main_target, other_target,pl
             this.instance.player_client.send('s.m.    You earned ' + main_target.payoff + '\xA2');
         }
         // If it's a tie, no one wins and game over (i.e. set both targets to visited)
-    } else if(this.distance_between(player1.pos,main_target.location) < main_target.radius + 8
+    } else if(this.distance_between(player1.pos,main_target.location) < main_target.radius + player1.size.hy
               && !main_target.visited
-              && this.distance_between(player2.pos, main_target.location) < main_target.outer_radius + 8) {
+              && this.distance_between(player2.pos, main_target.location) < main_target.outer_radius + player2.size.hy) {
         // Let them know they tied...
         this.instance.player_client.send('s.m.Tie! No money awarded!');
         this.instance.player_host.send('s.m.Tie! No money awarded!');
@@ -436,18 +390,9 @@ game_core.prototype.check_target_reached = function(main_target, other_target,pl
     }    
 };
 
-/*
-  
-  Client side functions
-  
-  These functions below are specific to the client side only,
-  and usually start with client_* to make things clearer.
-  
-*/
-
 // Every second, we print out a bunch of information to a file in a
 // "data" directory. We keep EVERYTHING so that we
-// can analyze the data to an arbitrary exactness later on.
+// can analyze the data to an arbitrary precision later on.
 game_core.prototype.writeData = function() {
     // Some funny business going on with angles being negative, so we correct for that
     var host_angle_to_write = this.players.self.angle;
@@ -472,10 +417,10 @@ game_core.prototype.writeData = function() {
     host_data_line += this.players.self.points_earned + ',';
     host_data_line += this.players.self.noise.fixed(2) + ',';
     this.fs.appendFile(file_path, 
-               String(host_data_line) + "\n",
-               function (err) {
-               if(err) throw err;
-               });
+                       String(host_data_line) + "\n",
+                       function (err) {
+                           if(err) throw err;
+                       });
     console.log("Wrote: " + host_data_line);
 
     // Write data for the other player
@@ -489,26 +434,26 @@ game_core.prototype.writeData = function() {
     other_data_line += this.players.other.points_earned + ',';
     other_data_line += this.players.other.noise.fixed(2) + ',';
     this.fs.appendFile(file_path,
-               String(other_data_line) + "\n",
-               function (err) {
-               if(err) throw err;
-               });
+                       String(other_data_line) + "\n",
+                       function (err) {
+                           if(err) throw err;
+                       });
     console.log("Wrote: " + other_data_line);
 };
 
 // This gets called every iteration of a new game to reset positions
 game_core.prototype.server_reset_positions = function() {
 
-    var player_host = this.players.self.host ?  this.players.self : this.players.other;
-    var player_client = this.players.self.host ?  this.players.other : this.players.self;
+    var player_host = this.players.self.host ? this.players.self : this.players.other;
+    var player_client = this.players.self.host ? this.players.other : this.players.self;
 
-    player_host.pos = {x : 540, y:240};
-    player_client.pos = {x : 180, y:240};
+    player_host.pos = this.right_player_start_pos;
+    player_client.pos = this.left_player_start_pos;
 
-    player_host.angle = player_host.start_angle;
-    player_client.angle = player_client.start_angle;
+    player_host.angle = this.right_player_start_angle;
+    player_client.angle = this.left_player_start_angle;
 
-}; //game_core.server_reset_positions
+}; 
 
 // This also gets called at the beginning of every new game.
 // It randomizes payoffs, resets colors, and makes the targets "fresh and
@@ -532,7 +477,7 @@ game_core.prototype.server_reset_targets = function() {
         this.targets.bottom.payoff = this.little_payoff;
         this.best_target_string = 'top';
     }
-}; //game_core.server_reset_targets
+}; 
 
 
 // This is a really important function -- it gets called when a round
@@ -540,6 +485,23 @@ game_core.prototype.server_reset_targets = function() {
 // people have made so far. This way, if somebody gets disconnected or
 // something, we'll still know what to pay them.
 game_core.prototype.server_newgame = function() {
+    if (use_db) {
+        var sql1 = 'UPDATE game_participant SET bonus_pay = ' + 
+            (this.players.self.points_earned / 100).toFixed(2); 
+        sql1 += ' WHERE workerId = "' + this.players.self.instance.userid + '"';
+        this.mysql_conn.query(sql1, function(err, rows, fields) {
+            if (err) throw err;
+            console.log('Updated sql with command: ', sql1);
+        });
+        var sql2 = 'UPDATE game_participant SET bonus_pay = ' + 
+            (this.players.other.points_earned / 100).toFixed(2); 
+        sql2 += ' WHERE workerId = "' + this.players.other.instance.userid + '"';
+        this.mysql_conn.query(sql2, function(err, rows, fields) {
+            if (err) throw err;
+            console.log('Updated sql with command: ', sql2);
+        });
+    }
+    
     // Update number of games remaining
     this.games_remaining -= 1;
 
@@ -593,6 +555,46 @@ game_core.prototype.server_newgame = function() {
 /*
   The following code should NOT need to be changed
 */
+
+//Main update loop -- don't worry about it
+game_core.prototype.update = function() {
+    
+    //Update the game specifics
+    if(!this.server) 
+        this.client_update();
+    else 
+        this.server_update();
+    
+    //schedule the next update
+    this.updateid = window.requestAnimationFrame(this.update.bind(this), 
+                                                 this.viewport);
+};
+
+//For the server, we need to cancel the setTimeout that the polyfill creates
+game_core.prototype.stop_update = function() {  
+
+    // Stop old game from animating anymore
+    window.cancelAnimationFrame( this.updateid );  
+
+    // Stop loop still running from old game (if someone is still left,
+    // game_server.endGame will start a new game for them).
+    clearInterval(this.physics_interval_id);
+};
+
+game_core.prototype.create_physics_simulation = function() {    
+    return setInterval(function(){
+        this.update_physics();
+        this.game_clock += 1;
+        if (this.good2write) {
+            this.writeData();
+        }
+    }.bind(this), this.tick_frequency);
+};
+
+game_core.prototype.update_physics = function() {
+    if(this.server) 
+	this.server_update_physics();
+};
 
 //Prevents people from leaving the arena
 game_core.prototype.check_collision = function( item ) {
@@ -665,18 +667,17 @@ game_core.prototype.pos = function(a) { return {x:a.x,y:a.y}; };
 //Add a 2d vector with another one and return the resulting vector
 game_core.prototype.v_add = function(a,b) { return { x:(a.x+b.x).fixed(), y:(a.y+b.y).fixed() }; };
 
-//For the server, we need to cancel the setTimeout that the polyfill creates
-game_core.prototype.stop_update = function() {  
+//The remaining code runs the update animations
 
-    // Stop old game from animating anymore
-    window.cancelAnimationFrame( this.updateid );  
+//The main update loop runs on requestAnimationFrame,
+//Which falls back to a setTimeout loop on the server
+//Code below is from Three.js, and sourced from links below
 
-    // Stop loop still running from old game (if someone is still left,
-    // game_server.endGame will start a new game for them).
-    clearInterval(this.physics_interval_id);
-};
+//http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+//http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
 
-// The remaining code runs the update animations
+//requestAnimationFrame polyfill by Erik Möller
+//fixes from Paul Irish and Tino Zijdel
 var frame_time = 60/1000; // run the local game at 16ms/ 60hz
 if('undefined' != typeof(global)) frame_time = 45; //on server we run at 45ms, 22hz
 
