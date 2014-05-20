@@ -1,7 +1,7 @@
 Local demo (from scratch)
 =========================
 
-1. Git is a popular version control and source code management system. If you're new to git, you'll need to install the latest version by following the link for [Mac](https://code.google.com/p/git-osx-installer/downloads/list) or [Windows](https://code.google.com/p/msysgit/downloads/list?q=full+installer+official+git) and downloading the first option in the list. On Mac, this will give you a set of command-line tools (restart the terminal if the git command is still not found after installation). On Windows it will give you a shell to type commands into. For Linux users, more information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
+1. Git is a popular version control and source code management system. If you're new to git, you'll need to install the latest version by following the link for [Mac](https://code.google.com/p/git-osx-installer/downloads/list) or [Windows](https://code.google.com/p/msysgit/downloads/list?q=full+installer+official+git) and downloading the first option in the list. On Mac, this will give you a set of command-line tools (restart the terminal if the git command is still not found after installation). On Windows it will give you a shell to type commands into. For Linux users, more information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
 
 2. On Mac or Linux, use the Terminal to navigate to the location where you want to create your project, and enter ```git clone https://github.com/hawkrobe/collective_behavior.git``` at the command line to create a local copy of this repository. On Windows, run this command in the shell you installed at the previous step.
 
@@ -27,14 +27,14 @@ Local demo (from scratch)
 Putting experiment on web server
 ================================
 
-To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server. To link clients to the experiment, replace "localhost" in the links given above with your web server's name.
+To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server. To link clients to the experiment, replace "localhost" in the links given above with your web server's name.
 
 Integrating with MySQL
 ======================
 
-Checkout the ```database``` branch of this repository, which includes a file ```database.js``` where you can enter database information. The database is queried at two points in the code. One is in ```app.js``` to check whether the id supplied in the query string exists in the database. If it isn't, the player is notified and referred to another site rather than being assigned a unique random id. The other use of the database is in the “server\_newgame” function in ```game.core.js``` to record each player’s winnings on each round. 
+Enter your database information (i.e. user, password, and database name) in ```database.js```, then at the top of ```app.js``` and ```game.server.js```, set the variable to ```use_db = true```. Your database is queried at two points in the code. One is in ```app.js``` to check whether the id supplied in the query string exists in the database. If it isn't, the player is notified and referred to another site rather than being assigned a unique random id. The other location is the ```server_newgame()``` function in ```game.core.js```, where we record each player’s winnings at the end of each round.
 
-The example queries presume a table called ```game_participant``` with fields ```workerID``` and ```bonus_pay```.
+Note that the example queries assume a table called ```game_participant``` with fields ```workerID``` and ```bonus_pay```, but you can change the queries at the aforementioned places in the code to fit your database.
 
 Code Glossary
 =============
@@ -45,3 +45,6 @@ The code is divided across several distinct files. Here are the high-level descr
 * **app.js**: This is the Node.js script that sets everything up to listen for clients on the specified port. It will not need to be changed, except if you want to listen on a different port (default 8000).
 * **client.js**: Runs in a client's browser upon accessing the URL being served by our Node.js app. Creates a client-side game_core object, establishes a Socket.io connection between the client and the server, and specifies what happens upon starting or joining a game. This needs to be changed if introducing new Socket.io messsage (i.e. if you want to track a new client-side event), new shared variables, or new details of how games begin.
 * **game.server.js**: Contains the functions to pair people up into separate 'rooms' (```findGame()```) and also species how the server acts upon messages passed from clients (```onMessage()```). This needs to be changed if you want groups of more than two people, or if you're adding new events to the Socket.io pipeline.
+* **drawing.js**: Contains the HTML5 code to render graphics. Only needs to be changed if you desire a different graphical representation.
+* **index.html, index.css**: Define background of page and runs necessary client-side scripts. Do not need to be changed.
+* **disconnected.html, game_over.html**: Template pages to demonstrate how to refer a player out of the game upon some event. Should be replaced by pages specific to your purpose (e.g. an exit survey, a debriefing, or a link to submit the HIT on Mechanical Turk).

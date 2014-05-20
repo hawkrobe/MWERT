@@ -13,7 +13,7 @@ var
     UUID            = require('node-uuid'),
     server          = require('http').createServer(app),
     sio             = require('socket.io').listen(server),
-    use_db          = true,
+    use_db          = false,
     verbose         = true;
 
 if (use_db) {
@@ -82,7 +82,7 @@ sio.sockets.on('connection', function (client) {
             }
         });
     } else {
-        initialize(query, client);
+        initialize(query, client, id);
     }});
 
 var initialize = function(query, client, id) {                        

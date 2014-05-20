@@ -12,12 +12,12 @@
         game_server = module.exports = { games : {}, game_count:0 },
         UUID        = require('node-uuid'),
         fs          = require('fs'),
-        use_db      = true,
+        use_db      = false,
         verbose     = true;
 
     if (use_db) {
-	database    = require(__dirname + "/database"),
-	connection  = database.getConnection();
+	    database    = require(__dirname + "/database"),
+	    connection  = database.getConnection();
     }
 
 //Since we are sharing code with the browser, we
