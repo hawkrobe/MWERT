@@ -36,9 +36,10 @@ To make your experiment accessible over the internet, you'll need to put it in a
 Integrating with MySQL
 ======================
 
-Enter your database information (i.e. user, password, and database name) in ```database.js```, then at the top of ```app.js``` and ```game.server.js```, set the variable to ```use_db = true```. Your database is queried at two points in the code. One is in ```app.js``` to check whether the id supplied in the query string exists in the database. If it isn't, the player is notified and referred to another site rather than being assigned a unique random id. The other location is the ```server_newgame()``` function in ```game.core.js```, where we record each player’s winnings at the end of each round.
+First, enter your database information (i.e. user, password, and database name) in **database.js**. Next, set the ```use_db``` variable to ```true``` at the top of **app.js** and **game.server.js**. By default, the code assumes a table called ```game_participant``` with fields ```workerID``` and ```bonus_pay```, but you can change the queries at the following places in the code to fit your database:
 
-Note that the example queries assume a table called ```game_participant``` with fields ```workerID``` and ```bonus_pay```, but you can change the queries at the aforementioned places in the code to fit your database.
+The database is queried at only two points in the provided code. One is in **app.js** to check whether the id supplied in the query string exists in the database. If it isn't, the player is notified and referred to another site rather than being assigned a unique random id. The other location is the ```server_newgame()``` function in **game.core.js**, where we save each player’s current winnings to the database at the end of each round, just in case someone disconnects and we must pay however much they accumulated.
+
 
 Code Glossary
 =============
