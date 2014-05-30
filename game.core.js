@@ -4,7 +4,7 @@
     written by : http://underscorediscovery.com
     written for : http://buildnewgames.com/real-time-multiplayer/
     
-    modified for collective behavior experiments on Amazon Mechanical Turk
+    substantially modified for collective behavior experiments on the web
 
     MIT Licensed.
 */
@@ -142,44 +142,6 @@ var target = function(location) {
     this.radius = 10;
     this.outer_radius = this.radius + 35;
     this.color = 'white';
-};
-
-//server side we set the 'game_core' class to a global type, so that
-//it can use it in other files
-if('undefined' != typeof global) {
-    module.exports = global.game_core = game_core;
-}
-
-
-/*
-
-  Common functions
- 
-    These functions are shared between client and server, and are generic
-    for the game state. The client functions are client_* and server functions
-    are server_* so these have no prefix.
-
-*/
-
-game_core.prototype.client_update = function() {
-    //Clear the screen area
-    this.ctx.clearRect(0,0,720,480);
-
-    //draw help/information if required
-    draw_info(this, "Instructions: Click where you want to go");
-
-    //Draw targets first, so in background
-    draw_targets(this, this.players.self);
-
-    //Draw opponent next
-    draw_player(this, this.players.other);
-
-    // Draw points scoreboard 
-    this.ctx.fillText("Money earned: $" + (this.players.self.points_earned / 100).fixed(2), 300, 15);
-    this.ctx.fillText("Games remaining: " + this.games_remaining, 580, 15)
-
-    //And then we draw ourself so we're always in front
-    draw_player(this, this.players.self);
 };
 
 // Notifies clients of changes on the server side. Server totally
@@ -562,7 +524,7 @@ game_core.prototype.update = function() {
     
     //Update the game specifics
     if(!this.server) 
-        this.client_update();
+        client_update();
     else 
         this.server_update();
     
@@ -667,6 +629,13 @@ game_core.prototype.pos = function(a) { return {x:a.x,y:a.y}; };
 
 //Add a 2d vector with another one and return the resulting vector
 game_core.prototype.v_add = function(a,b) { return { x:(a.x+b.x).fixed(), y:(a.y+b.y).fixed() }; };
+
+
+// server side we set the 'game_core' class to a global type, so that
+// it can use it in other files 
+if('undefined' != typeof global) {
+    module.exports = global.game_core = game_core;
+}
 
 //The remaining code runs the update animations
 

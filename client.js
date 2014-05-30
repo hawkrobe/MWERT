@@ -206,8 +206,10 @@ client_newgame = function() {
 
 client_countdown = function() {
     game.players.self.message = '          Begin in 3...';
-    setTimeout(function(){game.players.self.message = '          Begin in 2...';}, 1000);
-    setTimeout(function(){game.players.self.message = '          Begin in 1...';}, 2000);
+    setTimeout(function(){game.players.self.message = '          Begin in 2...';}, 
+               1000);
+    setTimeout(function(){game.players.self.message = '          Begin in 1...';}, 
+               2000);
 
     // At end of countdown, say "GO" and start using their real angle
     setTimeout(function(){
@@ -217,6 +219,28 @@ client_countdown = function() {
     // Remove message text
     setTimeout(function(){game.players.self.message = '';}, 4000);
 }
+
+client_update = function() {
+    //Clear the screen area
+    game.ctx.clearRect(0,0,720,480);
+
+    //draw help/information if required
+    draw_info(game, "Instructions: Click where you want to go");
+
+    //Draw targets first, so in background
+    draw_targets(game, game.players.self);
+
+    //Draw opponent next
+    draw_player(game, game.players.other);
+
+    // Draw points scoreboard 
+    game.ctx.fillText("Money earned: $" + (game.players.self.points_earned / 100).fixed(2), 300, 15);
+    game.ctx.fillText("Games remaining: " + game.games_remaining, 580, 15)
+
+    //And then we draw ourself so we're always in front
+    draw_player(game, game.players.self);
+};
+
 
 /*
   The following code should NOT need to be changed
