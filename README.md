@@ -44,7 +44,7 @@ The database is queried at only two points in the provided code. One is in **app
 Code Glossary
 =============
 
-The code is divided across several distinct files. Here are the high-level description of the contents so that you can find the part you need to change for your own application:
+The code is divided across several distinct files to make it easier to understand the roles played by different functions. Here are the high-level description of the contents so that you can find the part you need to change for your own application:
 
 * **game.core.js**: Contains the game logic and drawing functions. Creates game, player, and target objects and specifies their properties. This is the primary code that must be changed when specifying a different game logic (e.g. ```server_update_physics()```, ```server_newgame()```, ```writeData()```).
 * **app.js**: This is the Node.js script that sets everything up to listen for clients on the specified port. It will not need to be changed, except if you want to listen on a different port (default 8000).
