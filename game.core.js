@@ -99,14 +99,15 @@ var game_player = function( game_instance, player_instance ) {
     //Set up initial values for our state information
     this.size = { x:16, y:16, hx:8, hy:8 };
     this.state = 'not-connected';
+    this.visible = "visible"; // Tracks whether client is watching game
     this.message = '';
     
     this.info_color = 'rgba(255,255,255,0)';
     this.id = '';
-    this.targets_enabled = false;
-    this.destination = null;
-    this.points_earned = 0;
-    this.speed = 0;
+    this.targets_enabled = false; // If true, will display targets
+    this.destination = null; // Last place client clicked
+    this.points_earned = 0; // keep track of number of points
+    this.speed = 0; 
     this.curr_distance_moved = 0;
 
     //These are used in moving us around later
@@ -368,11 +369,13 @@ game_core.prototype.writeData = function() {
         file_path = "data/ballistic/game_" + this.game_id + ".csv";
     else if (this.condition == "dynamic") 
         file_path = "data/dynamic/game_" + this.game_id + ".csv";
+    
     // Write data for the host player
     var host_data_line = String(this.game_number) + ',';
     host_data_line += String(this.game_clock) + ',';
     host_data_line += this.best_target_string + ',';
     host_data_line += "host,";
+    host_data_line += this.players.self.visible + ',';
     host_data_line += this.players.self.pos.x + ',';
     host_data_line += this.players.self.pos.y + ',';
     host_data_line += host_angle_to_write + ',';
@@ -390,6 +393,7 @@ game_core.prototype.writeData = function() {
     other_data_line += String(this.game_clock) + ',';
     other_data_line += this.best_target_string + ',';
     other_data_line += "other,";
+    other_data_line += this.players.other.visible + ',';
     other_data_line += this.players.other.pos.x + ',';
     other_data_line += this.players.other.pos.y + ',';
     other_data_line += other_angle_to_write + ',';

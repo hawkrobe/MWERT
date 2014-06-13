@@ -81,7 +81,9 @@ game_server.onMessage = function(client,message) {
         if(other_client){
             other_client.send('s.a.' + message_parts[1]);
         }
-    }    // else if(...) {
+    } else if (message_type == "h") { // Receive message when browser focus shifts
+        change_target.visible = message_parts[1];
+    }// else if(...) {
     
     // Any other ways you want players to interact with the game can be added
     // here as "else if" statements.

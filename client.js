@@ -18,7 +18,6 @@
 //   * game = the current game object for extracting current state
 //   * newX = the X coordinate of the player's click
 //   * newY = the Y coordinate of the player's click
-
 client_on_click = function(game, newX, newY ) {
     // Auto-correcting input, but only between rounds
     if (game.condition == 'ballistic' && !game.draw_enabled) {
@@ -286,8 +285,7 @@ window.onload = function(){
 
     //Finally, start the loop
     game.update();
-
-}; //window.onload
+};
 
 // Associates callback functions corresponding to different socket messages
 client_connect_to_server = function(game) {
@@ -316,7 +314,7 @@ client_onconnected = function(data) {
     //this lets us store the information about ourselves    
     this.players.self.id = data.id;
     this.players.self.online = true;
-}; //client_onconnected
+};
 
 client_reset_positions = function() {
 
@@ -337,8 +335,6 @@ client_onjoingame = function() {
 	game.players.self.pos = game.right_player_start_pos;
     game.players.other.start_angle = game.left_player_start_angle;
     game.players.self.start_angle = game.right_player_start_angle;
-
-    //Set colors once and for all.
     game.players.other.color = game.players.other.info_color = game.left_player_color;
     game.players.self.color = game.players.self.info_color = game.right_player_color;
 
@@ -364,4 +360,41 @@ client_onhostgame = function() {
 
     //Make sure we start in the correct place as the host.
     client_reset_positions();
-}; //client_onhostgame
+};
+
+// Automatically registers whether user has switched tabs...
+(function() {
+    document.hidden = hidden = "hidden";
+
+    // Standards:
+    if (hidden in document)
+        document.addEventListener("visibilitychange", onchange);
+    else if ((hidden = "mozHidden") in document)
+        document.addEventListener("mozvisibilitychange", onchange);
+    else if ((hidden = "webkitHidden") in document)
+        document.addEventListener("webkitvisibilitychange", onchange);
+    else if ((hidden = "msHidden") in document)
+        document.addEventListener("msvisibilitychange", onchange);
+    // IE 9 and lower:
+    else if ('onfocusin' in document)
+        document.onfocusin = document.onfocusout = onchange;
+    // All others:
+    else
+        window.onpageshow = window.onpagehide = window.onfocus 
+             = window.onblur = onchange;
+})();
+
+function onchange (evt) {
+    var v = 'visible', h = 'hidden',
+    evtMap = { 
+        focus:v, focusin:v, pageshow:v, blur:h, focusout:h, pagehide:h 
+    };
+    evt = evt || window.event;
+    if (evt.type in evtMap) {
+        document.body.className = evtMap[evt.type];
+    } else {
+        document.body.className = evt.target.hidden ? "hidden" : "visible";
+    }
+    game.socket.send("h." + document.body.className);
+};
+
