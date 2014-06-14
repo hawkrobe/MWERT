@@ -13,6 +13,8 @@
    THE FOLLOWING FUNCTIONS MAY NEED TO BE CHANGED
 */
 
+var visible;
+
 // This function is called whenever a player clicks. 
 // Input:
 //   * game = the current game object for extracting current state
@@ -155,6 +157,8 @@ client_onnetmessage = function(data) {
             client_onhostgame(); break;
         case 'j' : //join a game requested
             client_onjoingame(); break;
+        case 'b' : //blink title
+            flashTitle("GO!");  break;
         case 'n' : //ready a game requested
             client_newgame(); break;
         case 'e' : //end game requested
@@ -395,6 +399,32 @@ function onchange (evt) {
     } else {
         document.body.className = evt.target.hidden ? "hidden" : "visible";
     }
+    visible = document.body.className;
     game.socket.send("h." + document.body.className);
 };
 
+// Flashes title to notify user that game has started
+(function () {
+
+    var original = document.title;
+    var timeout;
+
+    window.flashTitle = function (newMsg, howManyTimes) {
+        function step() {
+            document.title = (document.title == original) ? newMsg : original;
+            if (visible == "hidden") {
+                timeout = setTimeout(step, 500);
+            } else {
+                document.title = original;
+            }
+        };
+        cancelFlashTitle(timeout);
+        step();
+    };
+
+window.cancelFlashTitle = function (timeout) {
+    clearTimeout(timeout);
+    document.title = original;
+};
+
+}());

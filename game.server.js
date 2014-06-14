@@ -150,46 +150,44 @@ game_server.createGame = function(player) {
 game_server.endGame = function(gameid, userid) {
     var thegame = this.games[gameid];
     if(thegame) {
-    //stop the game updates immediately
-    thegame.gamecore.stop_update();
+        //stop the game updates immediately
+        thegame.gamecore.stop_update();
 
-    //if the game has two players, then one is leaving
-    if(thegame.player_count > 1) {
+        //if the game has two players, then one is leaving
+        if(thegame.player_count > 1) {
 
-        //send the players the message the game is ending
-        if(userid == thegame.player_host.userid) {
-        //the host left, oh snap. Let's update the database and tell them.
-        if(thegame.player_client) {
-            //tell them the game is over, and redirect to exit survey
-            thegame.player_client.send('s.e');
+            //send the players the message the game is ending
+            if(userid == thegame.player_host.userid) {
+                //the host left, oh snap. Let's update the database and tell them.
+                if(thegame.player_client) {
+                    //tell them the game is over, and redirect to exit survey
+                    thegame.player_client.send('s.e');
+                }
+            } else {
+                //the other player left, we were hosting
+                if(thegame.player_host) {
+                    //tell the client the game is ended
+                    thegame.player_host.send('s.e');
+                    //i am no longer hosting, this game is going down
+                    thegame.player_host.hosting = false;
+                }
+            }
         }
-        } else {
-        //the other player left, we were hosting
-        if(thegame.player_host) {
-            //tell the client the game is ended
-            thegame.player_host.send('s.e');
-            //i am no longer hosting, this game is going down
-            thegame.player_host.hosting = false;
-        }
-        }
-    }
-    delete this.games[gameid];
-    this.game_count--;
-    this.log('game removed. there are now ' + this.game_count + ' games' );
+        delete this.games[gameid];
+        this.game_count--;
+        this.log('game removed. there are now ' + this.game_count + ' games' );
     } else {
-    this.log('that game was not found!');
-    }
+        this.log('that game was not found!');
+    }    
+}; 
 
-}; //game_server.endGame
-
-// When two people join a game, this gets called
+// When second person joins the game, this gets called
 game_server.startGame = function(game) {
-
-    //a game has 2 players and wants to begin
-    //the host already knows they are hosting,
-    //tell the other client they are joining a game
-    //s=server message, j=you are joining, send them the host id
     
+    // Tell host so that their title will flash if not visible
+    game.player_host.send('s.b');
+
+    //s=server message, j=you are joining, send player the host id
     game.player_client.send('s.j.' + game.player_host.userid);
     game.player_client.game = game;
 
