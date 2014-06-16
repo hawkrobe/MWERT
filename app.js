@@ -96,9 +96,9 @@ var initialize = function(query, client, id) {
     game_server.findGame(client);
     
     // Now we want set up some callbacks to handle messages that clients will send.
-    // We'll just pass messages off to the onMessage function for now.
+    // We'll just pass messages off to the server_onMessage function for now.
     client.on('message', function(m) {
-        game_server.onMessage(client, m);
+        game_server.server_onMessage(client, m);
     }); 
             
     // When this client disconnects, we want to tell the game server

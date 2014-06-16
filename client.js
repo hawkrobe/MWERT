@@ -130,8 +130,8 @@ client_onserverupdate_recieved = function(data){
 //          this.instance.player_host.send("s.x. <data>")
 
 // The corresponding function where the server parses messages from
-// clients, look for "onMessage" in game.server.js.
-client_onnetmessage = function(data) {
+// clients, look for "server_onMessage" in game.server.js.
+client_onMessage = function(data) {
 
     var commands = data.split('.');
     var command = commands[0];
@@ -310,7 +310,7 @@ client_connect_to_server = function(game) {
     //Handle when we connect to the server, showing state and storing id's.
     game.socket.on('onconnected', client_onconnected.bind(game));
     //On message from the server, we parse the commands and send it to the handlers
-    game.socket.on('message', client_onnetmessage.bind(game));
+    game.socket.on('message', client_onMessage.bind(game));
 }; 
 
 client_onconnected = function(data) {

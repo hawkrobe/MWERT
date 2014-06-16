@@ -39,7 +39,7 @@ game_server.log = function() {
 // to the server (check the client_on_click function in game.core.js)
 // with the coordinates of the click, which this function reads and
 // applies.
-game_server.onMessage = function(client,message) {
+game_server.server_onMessage = function(client,message) {
 
     //Cut the message up into sub components
     var message_parts = message.split('.');
@@ -88,7 +88,7 @@ game_server.onMessage = function(client,message) {
     // Any other ways you want players to interact with the game can be added
     // here as "else if" statements.
     
-}; //game_server.onMessage
+};
 
 //Define some required functions
 game_server.createGame = function(player) {
@@ -131,8 +131,8 @@ game_server.createGame = function(player) {
     thegame.gamecore.update();
 
     //tell the player that they are now the host
-    //The client will parse this message in the "client_onnetmessage" function
-    // in game.core.js, which redirects to other functions based on the command
+    //The client will parse this message in the "client_onMessage" function
+    // in client.js, which redirects to other functions based on the command
     player.send('s.h.')
     player.game = thegame;
     //    player.hosting = true;
