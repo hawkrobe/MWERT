@@ -31,7 +31,7 @@ Local demo (from scratch)
 Putting experiment on web server
 ================================
 
-To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server, and run ```node app.js``` from that directory. To link clients to the experiment, replace "localhost" in the links given above with your web server's name. Sample templates are given for 'disconnected' and 'game over' web pages, but you may want to serve up a customized HTML document containing an exit survey or a portal to submit work (if you are using an online labor market like Amazon Mechanical Turk). To do so, you can change the URL in the ```client_newgame()``` and ```client_ondisconnect``` functions contained in **client.js**.
+To make your experiment accessible over the internet, you'll need to put it in a publicly accessible directory of a web server, and run ```node app.js``` from that directory. To link clients to the experiment, replace "localhost" in the links given above with your web server's name. Sample templates are given for 'disconnected' and 'game over' web pages, but you may want to serve up a customized HTML document containing an exit survey or a portal to submit work (if you are using an online labor market like Amazon Mechanical Turk). To do so, you can change the URL in the ```client_newgame()``` and ```client_ondisconnect()``` functions contained in **client.js**.
 
 Integrating with MySQL
 ======================
