@@ -1,7 +1,7 @@
 Local demo (from scratch)
 =========================
 
-1. Git is a popular version control and source code management system. If you're new to git, you'll need to install the latest version by following the link for [Mac](https://code.google.com/p/git-osx-installer/downloads/list) or [Windows](https://code.google.com/p/msysgit/downloads/list?q=full+installer+official+git) and downloading the first option in the list. On Mac, this will give you a set of command-line tools (restart the terminal if the git command is still not found after installation). On Windows it will give you a shell to type commands into. For Linux users, more information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
+1. Git is a popular version control and source code management system. If you're new to git, you'll need to install the latest version by following the link for [Mac](http://sourceforge.net/projects/git-osx-installer/) or [Windows](http://msysgit.github.io/) and downloading the first option in the list. On Mac, this will give you a set of command-line tools (restart the terminal if the git command is still not found after installation). On Windows it will give you a shell to type commands into. For Linux users, more information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
 
 2. On Mac or Linux, use the Terminal to navigate to the location where you want to create your project, and enter 
    ```
