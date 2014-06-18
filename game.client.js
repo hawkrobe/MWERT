@@ -98,7 +98,7 @@ Explanation: This function is at the center of the problem of
   the server regularly sends news about its variables to the clients so
   that they can update their variables to reflect changes.
 */
-client_onserverupdate_recieved = function(data){
+client_onserverupdate_received = function(data){
     var player_host  =this.players.self.host ? this.players.self : this.players.other;
     var player_client=this.players.self.host ? this.players.other : this.players.self;
     var game_player  =this.players.self;
@@ -306,7 +306,7 @@ client_connect_to_server = function(game) {
     //Sent when we are disconnected (network, server down, etc)
     game.socket.on('disconnect', client_ondisconnect.bind(game));
     //Sent each tick of the server simulation. This is our authoritive update
-    game.socket.on('onserverupdate', client_onserverupdate_recieved.bind(game));
+    game.socket.on('onserverupdate', client_onserverupdate_received.bind(game));
     //Handle when we connect to the server, showing state and storing id's.
     game.socket.on('onconnected', client_onconnected.bind(game));
     //On message from the server, we parse the commands and send it to the handlers

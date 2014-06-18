@@ -12,7 +12,7 @@ var
     gameport        = 8000,
     app             = require('express')(),
     server          = app.listen(gameport),
-    io             = require('socket.io')(server),
+    io              = require('socket.io')(server),
     UUID            = require('node-uuid');
 
 if (use_db) {
@@ -20,35 +20,22 @@ if (use_db) {
     connection      = database.getConnection();
 }
 
-/* Express server set up. */
+game_server = require('./game.server.js');
 
-//Log something so we know that it succeeded.
+// Log something so we know that server-side setup succeeded
+console.log("info  - socket.io started");
 console.log('\t :: Express :: Listening on port ' + gameport );
 
 //  This handler will listen for requests on /*, any file from the
-//  root of our server. See expressjs documentation for more info on
-//  routing.
+//  root of our server. See expressjs documentation for more info 
 app.get( '/*' , function( req, res, next ) {
-    //This is the current file they have requested
+    // this is the current file they have requested
     var file = req.params[0]; 
     console.log('\t :: Express :: file requested: ' + file);    
 
-    //Give them what they want!
+    // give them what they want
     res.sendfile("./" + file);
 }); 
-
-/* Socket.IO server set up. */
-        
-io.use(function(socket, next) {
-    var handshakeData = socket.request;
-    next();
-});
-
-//io.set('authorization', function (handshakeData, callback) {
-//    callback(null, true); // error first callback style 
-//});
-
-game_server = require('./game.server.js');
 
 // Socket.io will call this function when a client connects. We check
 // to see if the client supplied a id. If so, we distinguish them by
@@ -57,14 +44,14 @@ io.on('connection', function (client) {
     // Recover query string information and set condition
     var hs = client.handshake;    
     var query = require('url').parse(client.handshake.headers.referer, true).query;
-    var id = (query.id) ? query.id : UUID(); // Ternary operator!
+    var id = (query.id) ? query.id : UUID(); // use id from query string if exists
     client.condition = query.condition;
     if (use_db) {
+        // Only let a player join if they are already in the database.
+        // Otherwise, send an alert message
         var q = 'SELECT EXISTS(SELECT * FROM game_participant WHERE workerId = ' + 
             connection.escape(id) + ') AS b';
         connection.query(q, function(err, results) {
-            // Only let a player join if they are already in the database.
-            // Otherwise, send an alert message
             player_exists = results[0].b;
             if (id && player_exists) {
                 initialize(query, client, id);

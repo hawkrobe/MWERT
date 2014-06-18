@@ -19,13 +19,13 @@
 	    connection  = database.getConnection();
     }
 
-global.window = global.document = global;
 require('./game.core.js');
+global.window = global.document = global;
 
 // This is the function where the server parses and acts on messages
 // sent from 'clients' aka the browsers of people playing the
 // game. For example, if someone clicks on the map, they send a packet
-// to the server (check the client_on_click function in game.core.js)
+// to the server (check the client_on_click function in game.client.js)
 // with the coordinates of the click, which this function reads and
 // applies.
 game_server.server_onMessage = function(client,message) {
@@ -90,7 +90,7 @@ game_server.createGame = function(player) {
 
     //Keep track of how many there are total
     this.game_count++;
-
+    
     //Create a new game core instance (defined in game.core.js)
     thegame.gamecore = new game_core(thegame);
 

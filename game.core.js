@@ -27,7 +27,7 @@ var game_core = function(game_instance){
     this.right_player_color = '#cc0000';
     this.big_payoff = 4
     this.little_payoff = 1
-
+    
     // Create targets and assign fixed position
     this.targets = {
         top :    new target({x : 360, y : 120}),
@@ -55,6 +55,7 @@ var game_core = function(game_instance){
 	        self : new game_player(this,this.instance.player_host),
 	        other : new game_player(this,this.instance.player_client)};
 	    this.game_clock = 0;
+        
     } else {
 	    this.players = {
 	        self : new game_player(this),
@@ -145,9 +146,10 @@ var target = function(location) {
     this.color = 'white';
 };
 
+
 // Notifies clients of changes on the server side. Server totally
 // handles position and points.
-game_core.prototype.server_update = function(){
+game_core.prototype.server_send_update = function(){
     
     //Make a snapshot of the current state, for updating the clients
     this.laststate = {
@@ -284,13 +286,12 @@ game_core.prototype.server_update_physics = function() {
             this.instance.player_client.send('s.p.      Choose a target');
         }
     }
-}; //game_core.server_update_physics
+};
 
 // A lot of our specific game logic is buried in this function. The dictates when
 // players get payoffs (i.e. if they're close, the other player is far, and the
 // target hasn't been reached yet). If you want to change the "win" condition, it's here.
-game_core.prototype.server_check_for_payoff = function(player1, player2, whoisplayer1){
-    
+game_core.prototype.server_check_for_payoff = function(player1, player2, whoisplayer1){    
     // Check whether players have reached 
     var top_target = this.targets.top;
     var bottom_target = this.targets.bottom;
@@ -530,7 +531,7 @@ game_core.prototype.update = function() {
     if(!this.server) 
         client_update();
     else 
-        this.server_update();
+        this.server_send_update();
     
     //schedule the next update
     this.updateid = window.requestAnimationFrame(this.update.bind(this), 
@@ -636,7 +637,7 @@ game_core.prototype.v_add = function(a,b) { return { x:(a.x+b.x).fixed(), y:(a.y
 
 
 // server side we set the 'game_core' class to a global type, so that
-// it can use it in other files 
+// it can use it in other files (specifically, game.server.js)
 if('undefined' != typeof global) {
     module.exports = global.game_core = game_core;
 }
