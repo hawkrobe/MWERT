@@ -72,13 +72,13 @@ client_ondisconnect = function(data) {
 
     if(game.games_remaining == 0) {
         // If the game is done, redirect them to an exit survey
-        URL = './game_over.html';
+        URL = './static/game_over.html';
         URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
     } else {
         // Otherwise, redirect them to a "we're sorry, the other
         // player disconnected" page
-        URL = './disconnected.html'
+        URL = './static/disconnected.html'
         URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
     }
@@ -175,7 +175,7 @@ client_onMessage = function(data) {
 client_newgame = function() {
     if (game.games_remaining == 0) {
         // Redirect to exit survey
-        var URL = 'game_over.html';
+        var URL = './static/game_over.html';
         URL += '?id=' + game.players.self.id;
         window.location.replace(URL);
     } else {
