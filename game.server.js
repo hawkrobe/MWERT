@@ -9,29 +9,18 @@
 */
 
     var
+        use_db      = false,
         game_server = module.exports = { games : {}, game_count:0 },
         UUID        = require('node-uuid'),
-        fs          = require('fs'),
-        use_db      = false,
-        verbose     = true;
+        fs          = require('fs');
 
     if (use_db) {
 	    database    = require(__dirname + "/database"),
 	    connection  = database.getConnection();
     }
 
-//Since we are sharing code with the browser, we
-//are going to include some values to handle that.
 global.window = global.document = global;
-
-//Import shared game library code.
 require('./game.core.js');
-
-//A simple wrapper for logging so we can toggle it,
-//and augment it for clarity.
-game_server.log = function() {
-    console.log.apply(this,arguments);
-};
 
 // This is the function where the server parses and acts on messages
 // sent from 'clients' aka the browsers of people playing the
@@ -40,7 +29,6 @@ game_server.log = function() {
 // with the coordinates of the click, which this function reads and
 // applies.
 game_server.server_onMessage = function(client,message) {
-
     //Cut the message up into sub components
     var message_parts = message.split('.');
 
@@ -57,13 +45,6 @@ game_server.server_onMessage = function(client,message) {
     }
 
     if(message_type == 'c') {    // Client clicked somewhere
-    // The logic here is as follows: if they're in the 'waiting
-    // room' phase (before targets have been displayed), then a click
-    // always means setting speed back to normal (recall that
-    // players stop when they reach destination). If they're in
-    // the real part of the game, then we have to make sure that
-    // they're outside of a countdown phase before setting their
-    // speed back up. 
         if(!change_target.targets_enabled) {
             change_target.speed = client.game.gamecore.global_speed;
         } else {
@@ -83,16 +64,18 @@ game_server.server_onMessage = function(client,message) {
         }
     } else if (message_type == "h") { // Receive message when browser focus shifts
         change_target.visible = message_parts[1];
-    }// else if(...) {
+    }
+    // else if(...) {
     
     // Any other ways you want players to interact with the game can be added
     // here as "else if" statements.
-    
 };
 
-//Define some required functions
-game_server.createGame = function(player) {
+/* 
+   The following functions should not need to be modified for most purposes
+*/
 
+game_server.createGame = function(player) {
     var id = UUID();
     //Create a new game instance
     var thegame = {
@@ -124,7 +107,7 @@ game_server.createGame = function(player) {
     // Pass the database connection to the game
     if (use_db) {
         thegame.gamecore.mysql_conn = connection;
-	thegame.gamecore.use_db = use_db;
+	    thegame.gamecore.use_db = use_db;
     }
 
     //Start updating the game loop on the server
@@ -135,7 +118,7 @@ game_server.createGame = function(player) {
     // in client.js, which redirects to other functions based on the command
     player.send('s.h.')
     player.game = thegame;
-    //    player.hosting = true;
+
     // Start 'em moving
     thegame.gamecore.players.self.speed = thegame.gamecore.global_speed;
     this.log('player ' + player.userid + ' created a game with id ' + player.game.id);
@@ -190,7 +173,7 @@ game_server.startGame = function(game) {
     //s=server message, j=you are joining, send player the host id
     game.player_client.send('s.j.' + game.player_host.userid);
     game.player_client.game = game;
-
+    
     //now we tell the server that the game is ready to start
     game.gamecore.server_newgame();    
 
@@ -215,7 +198,6 @@ game_server.findGame = function(player) {
             var game_instance = this.games[gameid];
             //If the game is a player short
             if(game_instance.player_count < 2) {                
-                //someone wants us to join!
                 joined_a_game = true;
                 //increase the player count and store
                 //the player as the client of this game
@@ -223,17 +205,12 @@ game_server.findGame = function(player) {
                 game_instance.gamecore.players.other.instance = player;
                 game_instance.gamecore.players.other.id = player.userid;
                 game_instance.player_count++;
-                //Make sure the new player gets sent an update about state of game
+                // start the server update loop
                 game_instance.gamecore.update();
-                //start running the game on the server,
-                //which will tell them to respawn/start
-                this.startGame(game_instance);
-                
+                this.startGame(game_instance);                
             }
         }
-        //now if we didn't join a game,
-        //we must create one
-        if(!joined_a_game) {
+        if(!joined_a_game) { // if we didn't join a game, we must create one
             this.createGame(player);
         } 
     } else { 
@@ -241,3 +218,9 @@ game_server.findGame = function(player) {
         this.createGame(player);
     }
 }; 
+
+//A simple wrapper for logging so we can toggle it,
+//and augment it for clarity.
+game_server.log = function() {
+    console.log.apply(this,arguments);
+};

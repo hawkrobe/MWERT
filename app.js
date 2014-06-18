@@ -8,13 +8,12 @@
 */
 
 var 
+    use_db          = false,
     gameport        = 8000,
     app             = require('express')(),
-    UUID            = require('node-uuid'),
-    server          = require('http').createServer(app),
-    sio             = require('socket.io').listen(server),
-    use_db          = false,
-    verbose         = true;
+    server          = app.listen(gameport),
+    io             = require('socket.io')(server),
+    UUID            = require('node-uuid');
 
 if (use_db) {
     database        = require(__dirname + "/database"),
@@ -22,12 +21,6 @@ if (use_db) {
 }
 
 /* Express server set up. */
-
-//The express server handles passing our content to the browser,
-//As well as routing users where they need to go. 
-
-//Tell the server to listen for incoming connections
-server.listen(gameport);
 
 //Log something so we know that it succeeded.
 console.log('\t :: Express :: Listening on port ' + gameport );
@@ -46,22 +39,21 @@ app.get( '/*' , function( req, res, next ) {
 
 /* Socket.IO server set up. */
         
-//Create a socket.io instance using our express server
-//See http://socket.io/ for more information
-
-sio.configure(function (){
-    sio.set('log level', 0);
-    sio.set('authorization', function (handshakeData, callback) {
-        callback(null, true); // error first callback style 
-    });
+io.use(function(socket, next) {
+    var handshakeData = socket.request;
+    next();
 });
+
+//io.set('authorization', function (handshakeData, callback) {
+//    callback(null, true); // error first callback style 
+//});
 
 game_server = require('./game.server.js');
 
 // Socket.io will call this function when a client connects. We check
 // to see if the client supplied a id. If so, we distinguish them by
 // that, otherwise we assign them one at random
-sio.sockets.on('connection', function (client) {
+io.on('connection', function (client) {
     // Recover query string information and set condition
     var hs = client.handshake;    
     var query = require('url').parse(client.handshake.headers.referer, true).query;
