@@ -86,7 +86,7 @@ client_ondisconnect = function(data) {
 
 /* 
 Note: If you add some new variable to your game that must be shared
-  across server and client, add it both here and the server_update
+  across server and client, add it both here and the server_send_update
   function in game.core.js to make sure it syncs 
 
 Explanation: This function is at the center of the problem of
@@ -104,7 +104,7 @@ client_onserverupdate_received = function(data){
     var game_player  =this.players.self;
         
     // Update client versions of variables with data received from
-    // server_update function in game.core.js
+    // server_send_update function in game.core.js
     if(data.hpos) 
         player_host.pos = this.pos(data.hpos); 
     if(data.cpos) 
@@ -160,7 +160,7 @@ client_onMessage = function(data) {
         case 'b' : //blink title
             flashTitle("GO!");  break;
         case 'n' : //ready a game requested
-            client_newgame(); break;
+            client_new_game(); break;
         case 'e' : //end game requested
             client_ondisconnect(); break;
         case 'a' : // other player changed angle
@@ -172,7 +172,7 @@ client_onMessage = function(data) {
 }; 
 
 // Restarts things on the client side. Necessary for iterated games.
-client_newgame = function() {
+client_new_game = function() {
     if (game.games_remaining == 0) {
         // Redirect to exit survey
         var URL = './static/game_over.html';

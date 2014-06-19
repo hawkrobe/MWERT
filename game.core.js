@@ -408,20 +408,6 @@ game_core.prototype.writeData = function() {
     console.log("Wrote: " + other_data_line);
 };
 
-// This gets called every iteration of a new game to reset positions
-game_core.prototype.server_reset_positions = function() {
-
-    var player_host = this.players.self.host ? this.players.self : this.players.other;
-    var player_client = this.players.self.host ? this.players.other : this.players.self;
-
-    player_host.pos = this.right_player_start_pos;
-    player_client.pos = this.left_player_start_pos;
-
-    player_host.angle = this.right_player_start_angle;
-    player_client.angle = this.left_player_start_angle;
-
-}; 
-
 // This also gets called at the beginning of every new game.
 // It randomizes payoffs, resets colors, and makes the targets "fresh and
 // available" again.
@@ -537,6 +523,20 @@ game_core.prototype.update = function() {
     this.updateid = window.requestAnimationFrame(this.update.bind(this), 
                                                  this.viewport);
 };
+
+// This gets called every iteration of a new game to reset positions
+game_core.prototype.server_reset_positions = function() {
+
+    var player_host = this.players.self.host ? this.players.self : this.players.other;
+    var player_client = this.players.self.host ? this.players.other : this.players.self;
+
+    player_host.pos = this.right_player_start_pos;
+    player_client.pos = this.left_player_start_pos;
+
+    player_host.angle = this.right_player_start_angle;
+    player_client.angle = this.left_player_start_angle;
+
+}; 
 
 //For the server, we need to cancel the setTimeout that the polyfill creates
 game_core.prototype.stop_update = function() {  
