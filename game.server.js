@@ -19,8 +19,9 @@
 	    connection  = database.getConnection();
     }
 
-require('./game.core.js');
 global.window = global.document = global;
+
+require('./game.core.js');
 
 // This is the function where the server parses and acts on messages
 // sent from 'clients' aka the browsers of people playing the

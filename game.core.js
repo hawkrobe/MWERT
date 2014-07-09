@@ -146,6 +146,12 @@ var target = function(location) {
     this.color = 'white';
 };
 
+// server side we set the 'game_core' class to a global type, so that
+// it can use it in other files (specifically, game.server.js)
+if('undefined' != typeof global) {
+    module.exports = global.game_core = game_core;
+}
+
 
 // Notifies clients of changes on the server side. Server totally
 // handles position and points.
@@ -634,13 +640,6 @@ game_core.prototype.pos = function(a) { return {x:a.x,y:a.y}; };
 
 //Add a 2d vector with another one and return the resulting vector
 game_core.prototype.v_add = function(a,b) { return { x:(a.x+b.x).fixed(), y:(a.y+b.y).fixed() }; };
-
-
-// server side we set the 'game_core' class to a global type, so that
-// it can use it in other files (specifically, game.server.js)
-if('undefined' != typeof global) {
-    module.exports = global.game_core = game_core;
-}
 
 //The remaining code runs the update animations
 
