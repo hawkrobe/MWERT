@@ -28,7 +28,7 @@ console.log('\t :: Express :: Listening on port ' + gameport );
 
 //  This handler will listen for requests on /*, any file from the
 //  root of our server. See expressjs documentation for more info 
-app.get( '/*' , function( req, res, next ) {
+app.get( '/*' , function( req, res ) {
     // this is the current file they have requested
     var file = req.params[0]; 
     console.log('\t :: Express :: file requested: ' + file);    
