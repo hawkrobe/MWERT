@@ -1,3 +1,5 @@
+![Example Experiment Screenshot](/../screenshot/static/Example_Image.jpg?raw=true)
+
 Local demo (from scratch)
 =========================
 
