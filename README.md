@@ -1,7 +1,15 @@
-![Example Experiment Screenshot](/../screenshot/static/Example_Image.jpg?raw=true)
+Related projects
+================
+
+In addition to the real-time game theory task implemented in this directory and discussed in [this paper](http://link.springer.com/article/10.3758%2Fs13428-014-0515-6), we have scaled up this framework for running a collective behavior experiment with arbitrary numbers of participants:
+
+https://github.com/hawkrobe/couzin_replication
+
 
 Local demo (from scratch)
 =========================
+
+![Example Experiment Screenshot](/../screenshot/static/Example_Image.jpg?raw=true)
 
 1. Git is a popular version control and source code management system. If you're new to git, you'll need to install the latest version by following the link for [Mac](http://sourceforge.net/projects/git-osx-installer/) or [Windows](http://msysgit.github.io/) and downloading the first option in the list. On Mac, this will give you a set of command-line tools (restart the terminal if the git command is still not found after installation). On Windows it will give you a shell to type commands into. For Linux users, more information can be found [here](http://git-scm.com/book/en/Getting-Started-Installing-Git).
 
