@@ -3,17 +3,11 @@ Related projects
 
 In addition to the real-time game theory task implemented in this directory and discussed in [this paper](http://link.springer.com/article/10.3758%2Fs13428-014-0515-6), we have 
 
-1. scaled up the MWERT framework for running a collective behavior experiment with arbitrary numbers of participants:
+1. scaled up the MWERT framework for running a collective behavior experiment with arbitrary numbers of participants (https://github.com/hawkrobe/couzin_replication)
 
-https://github.com/hawkrobe/couzin_replication
+2. implemented the Keysar director-agent task with a chatbox for players to communicate, and an array in which they drag objects around (https://github.com/hawkrobe/keysar_replication)
 
-2. implemented the Keysar director-agent task with a chatbox for players to communicate, and an array in which they drag objects around
-
-https://github.com/hawkrobe/keysar_replication
-
-3. implemented a guessing game experiment in which one player is assigned a goal (e.g. find the whale) and must form a question to ask the other player, who knows where the objects are hidden:
-
-https://github.com/hawkrobe/Q_and_A/tree/master/experiment3
+3. implemented a guessing game experiment in which one player is assigned a goal (e.g. find the whale) and must form a question to ask the other player, who knows where the objects are hidden (https://github.com/hawkrobe/Q_and_A/tree/master/experiment3)
 
 Local demo (from scratch)
 =========================
