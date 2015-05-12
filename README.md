@@ -7,7 +7,7 @@ In addition to the real-time game theory task implemented in this directory and 
 
 2. implemented the Keysar director-agent task with a chatbox for players to communicate, and an array in which they drag objects around (https://github.com/hawkrobe/keysar_replication)
 
-3. implemented a guessing game experiment in which one player is assigned a goal (e.g. find the whale) and must form a question to ask the other player, who knows where the objects are hidden (https://github.com/hawkrobe/Q_and_A/tree/master/experiment3)
+3. implemented a guessing game experiment in which one player is assigned a goal (e.g. find the whale) and must form a question to ask the other player, who knows where the objects are hidden (https://github.com/hawkrobe/Q_and_A/tree/master/MultiExperiment2/experiment/)
 
 Local demo (from scratch)
 =========================
